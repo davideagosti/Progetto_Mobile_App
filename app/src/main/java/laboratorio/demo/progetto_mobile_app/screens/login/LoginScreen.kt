@@ -1,4 +1,4 @@
-package laboratorio.demo.progetto_mobile_app.screens
+package laboratorio.demo.progetto_mobile_app.screens.login
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -19,40 +20,82 @@ import laboratorio.demo.progetto_mobile_app.R
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import laboratorio.demo.progetto_mobile_app.components.AppScaffold
+import laboratorio.demo.progetto_mobile_app.components.AppTopBar
 import laboratorio.demo.progetto_mobile_app.components.BackButton
+import laboratorio.demo.progetto_mobile_app.components.isLandscape
 import laboratorio.demo.progetto_mobile_app.navigation.Routes
 
 @Composable
 fun LoginScreen(navController: NavController) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
+    var email by rememberSaveable  { mutableStateOf("") }
+    var password by rememberSaveable  { mutableStateOf("") }
+    var errorMessage by rememberSaveable  { mutableStateOf("") }
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    if (isLandscape()) {
+        LoginLandscape(
+            navController = navController,
 
-        BackButton(
-            // navController = navController,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp),
+            email = email,
+            password = password,
+            errorMessage = errorMessage,
 
-            onClick = {
-                navController.popBackStack(
-                    Routes.Home,
-                    false
-                )
-
-//                navController.navigate(Routes.Home) {
-//                    popUpTo(Routes.Home) {
-//                        inclusive = false
-//                    }
-//                    launchSingleTop = true
-//                    restoreState = true
-//                }
-            }
+            onEmailChange = { email = it },
+            onPasswordChange = { password = it },
+            onErrorChange = { errorMessage = it }
         )
+    } else {
+        LoginPortrait(
+            navController = navController,
+
+            email = email,
+            password = password,
+            errorMessage = errorMessage,
+
+            onEmailChange = { email = it },
+            onPasswordChange = { password = it },
+            onErrorChange = { errorMessage = it }
+        )
+    }
+//    LoginForm(
+//        navController = navController
+//    )
+
+//    Box(
+//        modifier = Modifier.fillMaxSize()
+//    ) {
+//
+//        BackButton(
+//            // navController = navController,
+//            modifier = Modifier
+//                .align(Alignment.TopStart)
+//                .padding(16.dp),
+//
+//            onClick = {
+//                navController.popBackStack(
+//                    Routes.Home,
+//                    false
+//                )
+//
+////                navController.navigate(Routes.Home) {
+////                    popUpTo(Routes.Home) {
+////                        inclusive = false
+////                    }
+////                    launchSingleTop = true
+////                    restoreState = true
+////                }
+//            }
+//        )
+    /*
+    AppScaffold(
+
+        title = "Login",
+
+        onBackClick = {
+            navController.popBackStack()
+        }
+
+    ) { innerPadding ->
 
         Column(
             modifier = Modifier
@@ -187,18 +230,32 @@ fun LoginScreen(navController: NavController) {
                 }
             }
         }
-    }
+    }*/
 }
+
 
 @Preview(
     showBackground = true,
     showSystemUi = true
 )
-@Composable
-fun LoginScreenPreview() {
+
+@Composable fun LoginScreenPreview() {
     MaterialTheme {
         LoginScreen(
             navController = rememberNavController()
         )
     }
 }
+
+//@Preview(
+//    showBackground = true,
+//    showSystemUi = true
+//)
+//@Composable
+//fun LoginScreenPreview() {
+//    MaterialTheme {
+//        LoginScreen(
+//            navController = rememberNavController()
+//        )
+//    }
+//}

@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import laboratorio.demo.progetto_mobile_app.R
 import laboratorio.demo.progetto_mobile_app.components.AppScaffold
+import laboratorio.demo.progetto_mobile_app.components.AppBarConfig
 import laboratorio.demo.progetto_mobile_app.ui.theme.Progetto_Mobile_AppTheme
 
 @Composable
@@ -30,7 +31,7 @@ import laboratorio.demo.progetto_mobile_app.ui.theme.Progetto_Mobile_AppTheme
 fun SplashScreen(
     //innerPadding: PaddingValues = PaddingValues(0.dp)
     title: String = "Smart Travel Planner",
-    welcomeText: String = "Benvenuto!",
+    //welcomeText: String = "Benvenuto!",
     loadingText: String = "Caricamento...",
     logo: Int = R.drawable.google_maps_image,
     loadingColor: Color = colorResource(R.color.green)
@@ -44,11 +45,16 @@ fun SplashScreen(
 
         showBottomBar = true,
 
-        topBarTitle = title,
+        //topBarTitle = title,
+        topBarTitle = "",
 
-        bottomBarText = welcomeText,
+        //bottomBarText = welcomeText,
+        bottomBarText = "",
 
-        topBarColor = green,
+        //topBarColor = green,
+        appBarConfig = AppBarConfig(
+            backgroundColor = green
+        ),
 
         bottomBarColor = green
 
@@ -114,8 +120,8 @@ fun SplashScreen(
 
 
                 Text(
-                    //text = "Benvenuto!",
-                    text = welcomeText,
+                    text = "Benvenuto!",
+                    //text = welcomeText,
                     fontSize = 22.sp
                 )
 
