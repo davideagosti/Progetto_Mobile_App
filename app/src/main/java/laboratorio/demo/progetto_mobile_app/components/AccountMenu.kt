@@ -34,12 +34,12 @@ fun AccountMenu( navController: NavController) {
         mutableStateOf(false)
     }
 
-
+    // Controlla la visualizzazione della finestra di conferma
     var showExitDialog by remember {
         mutableStateOf(false)
     }
 
-
+    // Recupera l'Activity corrente
     val activity =
         LocalContext.current as? Activity
 

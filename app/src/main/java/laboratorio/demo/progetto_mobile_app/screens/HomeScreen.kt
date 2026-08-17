@@ -7,36 +7,41 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 
-import android.app.Activity
-import androidx.compose.material3.MaterialTheme
-import laboratorio.demo.progetto_mobile_app.components.AccountMenu
-import laboratorio.demo.progetto_mobile_app.components.SearchBar
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.material3.MaterialTheme
+
+import laboratorio.demo.progetto_mobile_app.components.AccountMenu
+import laboratorio.demo.progetto_mobile_app.components.SearchBar
+import laboratorio.demo.progetto_mobile_app.components.MapSection
+import laboratorio.demo.progetto_mobile_app.components.MapControls
+import laboratorio.demo.progetto_mobile_app.utils.LocationManager
+import laboratorio.demo.progetto_mobile_app.utils.GeocoderManager
+import laboratorio.demo.progetto_mobile_app.components.LocationPermissionHandler
 
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
-import android.os.Looper
-import android.os.Handler
-import android.location.Geocoder
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import com.google.android.gms.maps.CameraUpdateFactory
+
+import android.location.Location
+import laboratorio.demo.progetto_mobile_app.components.CitySuggestions
+import laboratorio.demo.progetto_mobile_app.components.cities
+
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 
 @Composable
 fun HomeScreen(
@@ -45,46 +50,98 @@ fun HomeScreen(
     ) {
 
     // ==========================================
-    // TESTO DELLA RICERCA
+    // CONTEXT
     // ==========================================
+
+    // Context utilizzato dai componenti Android.
+    val context = LocalContext.current
+
+    // ==========================================
+    // GESTIONE POSIZIONE
+    // ==========================================
+
+    // Gestisce permessi e recupero della posizione.
+    val locationManager = remember {
+        LocationManager(context)
+    }
+
+    // Indica se l'utente ha concesso almeno
+    // uno dei permessi di localizzazione.
+    var locationPermissionGranted by remember {
+        mutableStateOf(
+            locationManager.hasLocationPermission()
+        )
+    }
+
+    // Gestisce la richiesta dei permessi Android.
+    LocationPermissionHandler(
+        locationPermissionGranted = locationPermissionGranted,
+        onPermissionResult = { granted ->
+            locationPermissionGranted = granted
+        }
+    )
+
+    // ==========================================
+    // GESTIONE RICERCA
+    // ==========================================
+
+    // Gestisce la ricerca di luoghi tramite Geocoder.
+    val geocoderManager = remember {
+        GeocoderManager(context)
+    }
 
     // Testo inserito nella barra di ricerca
     var searchText by remember {
         mutableStateOf("")
     }
 
-    // ==========================================
-    // POSIZIONE TROVATA
-    // ==========================================
+    // Indica se la tendina dei suggerimenti deve essere visibile.
+    var showSuggestions by remember {
+        mutableStateOf(false)
+    }
+
+    // Gestisce il focus della SearchBar.
+    val focusManager = LocalFocusManager.current
+
+    // Controller utilizzato per nascondere
+    // la tastiera quando termina la ricerca.
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     // Posizione trovata dalla ricerca
+    // Null significa che non è stata ancora trovata
+    // nessuna posizione.
     var searchedLocation by remember {
         mutableStateOf<LatLng?>(null)
     }
 
     // ==========================================
-    // CONTEXT
+    // POSIZIONE ATTUALE
     // ==========================================
 
-    // Context necessario per utilizzare Geocoder
-    val context = LocalContext.current
-
-    var menuOpen by remember {
-        mutableStateOf(false)
+    // Ultima posizione conosciuta dell'utente.
+    var currentLocation by remember {
+        mutableStateOf<Location?>(null)
     }
-
-    // Controlla la visualizzazione della finestra di conferma
-    var showExitDialog by remember {
-        mutableStateOf(false)
-    }
-
-    // Recupera l'Activity corrente
-    val activity = LocalContext.current as? Activity
-
 
     // ==========================================
-    // POSIZIONE INIZIALE
-    // Bologna
+    // RECUPERO POSIZIONE INIZIALE
+    // ==========================================
+
+    // Quando l'utente concede il permesso,
+    // l'app prova a recuperare l'ultima posizione conosciuta.
+    LaunchedEffect(locationPermissionGranted) {
+
+        if (locationPermissionGranted) {
+
+            locationManager.getLastLocation { location ->
+
+                currentLocation = location
+            }
+        }
+    }
+
+    // ==========================================
+    // POSIZIONE INIZIALE DELLA MAPPA
     // ==========================================
 
     // Posizione iniziale della mappa: Bologna
@@ -95,7 +152,8 @@ fun HomeScreen(
     // STATO DELLA TELECAMERA
     // ==========================================
 
-    // Stato della telecamera della mappa
+    // Mantiene la posizione e lo zoom attuali
+    // della Google Map.
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
             bologna,
@@ -104,109 +162,193 @@ fun HomeScreen(
     }
 
     // ==========================================
-    // IMPOSTAZIONI CONTROLLI MAPPA
+    // SPOSTAMENTO DELLA MAPPA
     // ==========================================
 
-    val mapUiSettings = remember {
+    // Quando viene selezionata una città,
+    // spostiamo la telecamera sulla sua posizione.
+    LaunchedEffect(searchedLocation) {
 
-        MapUiSettings(
-            zoomControlsEnabled = true,
-            zoomGesturesEnabled = true,
-            scrollGesturesEnabled = true,
-            rotationGesturesEnabled = true,
-            tiltGesturesEnabled = true,
-            compassEnabled = true
-        )
+        searchedLocation?.let { location ->
+
+            cameraPositionState.animate(
+                update = CameraUpdateFactory.newLatLngZoom(
+                    location,
+                    13f
+                )
+            )
+        }
     }
 
     // ==========================================
-    // BOX PRINCIPALE
+    // BOX PRINCIPALE (INTERFACCIA)
     // ==========================================
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            //.wrapContentSize()
+        //.wrapContentSize()
     ) {
 
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
         ) {
 
             // =========================
-            // Barra superiore Home
+            // BARRA SUPERIORE HOME
             // =========================
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
+
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                // Barra ricerca
-                SearchBar(
-                    modifier = Modifier.weight(1f),
-                    searchText = searchText,
-                    onSearchTextChange = {
-                        searchText = it
-                    },
-                    onSearch = {
-                        // Controlliamo che l'utente
-                        // abbia effettivamente scritto qualcosa
-                        if (searchText.isNotBlank()) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+
+                    // Barra ricerca
+                    SearchBar(
+                        modifier = Modifier.fillMaxWidth(),
+                        searchText = searchText,
+                        onSearchTextChange = { text ->
+
+                            searchText = text
+
+                            // Mostra i suggerimenti quando l'utente
+                            // inizia a digitare.
+                            showSuggestions = text.isNotBlank()
+                        },
+
+                        onSearch = {
 
                             val query = searchText.trim()
 
-                            Thread {
-                                try {
+                            if (query.isNotBlank()) {
 
-                                    val geocoder = Geocoder(context)
-
-                                    @Suppress("DEPRECATION")
-                                    val addresses = geocoder.getFromLocationName(
-                                        //searchText,
+                                val city = cities.firstOrNull{
+                                    it.name.equals(
                                         query,
-                                        1
+                                        ignoreCase = true
+                                    )
+                                }
+
+                                if (city != null) {
+
+                                    searchText = city.name
+
+                                    searchedLocation = LatLng(
+                                        city.latitude,
+                                        city.longitude
                                     )
 
-                                    if (!addresses.isNullOrEmpty()) {
+                                    // Nasconde i suggerimenti.
+                                    showSuggestions = false
 
-                                        val address = addresses[0]
+                                    // Rimuove il cursore dalla SearchBar.
+                                    focusManager.clearFocus()
 
-                                        println(
-                                            "RISULTATO: ${address.latitude}, ${address.longitude}"
-                                        )
+                                    // Nasconde la tastiera.
+                                    keyboardController?.hide()
 
-                                        val location = LatLng(
-                                            address.latitude,
-                                            address.longitude
-                                        )
+                                } else {
+                                    // Se non è una delle città
+                                    // predefinite, utilizza
+                                    // il Geocoder.
+                                    geocoderManager.search(query) { location ->
 
-                                        // Torniamo sul Main Thread
-                                        // Torniamo al thread principale
-                                        // perché stiamo modificando lo stato Compose
-                                        Handler(
-                                            Looper.getMainLooper()
-                                        ).post {
+                                        searchedLocation = location
 
-                                            println("Nessun risultato trovato per: $query")
-                                            searchedLocation = location
-                                        }
+                                        // Nasconde i suggerimenti
+                                        // dopo la ricerca.
+                                        showSuggestions = false
+
+                                        // Rimuove il focus.
+                                        focusManager.clearFocus()
+
+                                        // Nasconde la tastiera.
+                                        keyboardController?.hide()
                                     }
-
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
                                 }
-                            }.start()
+                            }
+                            /*
+                            val city = cities.firstOrNull{
+                                it.name.equals(
+                                    searchText.trim(),
+                                    ignoreCase = true
+                                )
+                            }
+
+                            if (city != null){
+                                searchedLocation = LatLng(
+                                    city.latitude,
+                                    city.longitude
+                                )
+                            }*/
+
+                            /*
+                            // Evita di effettuare una ricerca vuota.
+                            if (searchText.isNotBlank()) {
+                                return@SearchBar
+                            }
+                            //val query = searchText.trim()
+
+                            // Deleghiamo la ricerca al GeocoderManager.
+                            geocoderManager.search(searchText) { location ->
+                                //geocoderManager.search(query) { location ->
+
+                                // Aggiorniamo la posizione trovata.
+                                // Se location è null, non è stato trovato alcun risultato.
+                                searchedLocation = location
+                            }*/
+                            //}
                         }
+
+                    )
+
+                    // =====================================
+                    // SUGGERIMENTI
+                    // =====================================
+
+                    if (showSuggestions) {
+                        CitySuggestions(
+                            query = searchText,
+                            onCitySelected = { city ->
+
+                                // Inserisce il nome corretto
+                                // nella SearchBar.
+                                searchText = city.name
+
+                                // Imposta la posizione selezionata.
+                                // Salva la posizione selezionata.
+                                searchedLocation = LatLng(
+                                    city.latitude,
+                                    city.longitude
+                                )
+
+                                // Nasconde la tendina.
+                                showSuggestions = false
+
+                                // Toglie il focus dalla SearchBar.
+                                focusManager.clearFocus()
+
+                                // Nasconde la tastiera.
+                                keyboardController?.hide()
+
+                            }
+                        )
                     }
-                )
+                }
 
                 // Spazio tra barra ricerca e icona account
                 Spacer(
                     modifier = Modifier.width(12.dp)
                 )
 
+                // Account Menu
                 AccountMenu(navController)
             }
 
@@ -214,50 +356,60 @@ fun HomeScreen(
             // GOOGLE MAPS
             // =========================
 
-            GoogleMap(
+            MapSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
 
                 cameraPositionState = cameraPositionState,
 
-                uiSettings = mapUiSettings
-            ) {
+                searchedLocation = searchedLocation,
 
-                // Marker della posizione cercata
-                searchedLocation?.let { location ->
+                searchText = searchText,
 
-                    Marker(
-                        state = MarkerState(
-                            position = location
-                        ),
+                locationPermissionGranted = locationPermissionGranted,
 
-                        title = searchText,
+                currentLocation = currentLocation,
 
-                        snippet = "Posizione cercata"
+                onZoomIn = {
+                    cameraPositionState.move(
+                        CameraUpdateFactory.zoomIn()
                     )
+                },
+
+                onZoomOut = {
+                    cameraPositionState.move(
+                        CameraUpdateFactory.zoomOut()
+                    )
+                },
+
+                onMyLocationClick = {
+
+                    // Controlla che il permesso sia disponibile.
+                    if (locationPermissionGranted) {
+
+                        locationManager.getLastLocation {
+                            location ->
+
+                                if (location != null) {
+
+                                    // Salva la posizione attuale.
+                                    currentLocation = location
+
+                                    // Sposta la telecamera sulla posizione dell'utente.
+                                    cameraPositionState.move(
+                                        CameraUpdateFactory.newLatLngZoom(
+                                            LatLng(
+                                                location.latitude,
+                                                location.longitude
+                                            ),
+                                            16f
+                                        )
+                                    )
+                                }
+                        }
+                    }
                 }
-            }
-        }
-    }
-
-    // =========================
-    // SPOSTAMENTO DELLA MAPPA/TELECAMERA
-    // =========================
-
-    LaunchedEffect(searchedLocation) {
-
-        searchedLocation?.let { location ->
-
-            cameraPositionState.animate(
-//                update = com.google.android.gms.maps.CameraUpdateFactory
-//                    .newLatLngZoom(
-                update = CameraUpdateFactory.newLatLngZoom(
-                        location,
-                        15f
-                ),
-
-                durationMs = 1000
             )
         }
     }

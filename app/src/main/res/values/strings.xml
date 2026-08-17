@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Progetto_Mobile_App</string>
+    <string name="title_activity_maps">MapsActivity</string>
 </resources>
