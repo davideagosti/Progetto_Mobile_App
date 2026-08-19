@@ -25,7 +25,8 @@ fun LoginLandscape(
 
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onErrorChange: (String) -> Unit
+    onErrorChange: (String) -> Unit,
+    onLogin: () -> Unit
 ) {
 
     Column(
@@ -75,7 +76,8 @@ fun LoginLandscape(
 
             onEmailChange = onEmailChange,
             onPasswordChange = onPasswordChange,
-            onErrorChange = onErrorChange
+            onErrorChange = onErrorChange,
+            onLogin = onLogin
         )
 
         Spacer(
@@ -104,8 +106,8 @@ fun LoginLandscapePreview() {
 
             onEmailChange = {},
             onPasswordChange = {},
-            onErrorChange = {}
+            onErrorChange = {},
+            onLogin = {}
         )
     }
 }
-

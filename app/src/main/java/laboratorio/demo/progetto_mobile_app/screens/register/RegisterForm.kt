@@ -43,7 +43,8 @@ fun RegisterForm (
     onCognomeChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfermaPasswordChange: (String) -> Unit,
-    onErrorChange: (String) -> Unit
+    onErrorChange: (String) -> Unit,
+    onRegister: () -> Unit
 ){
 // CARD FORM
     Card(
@@ -137,13 +138,13 @@ fun RegisterForm (
 
                     when {
                         email.isBlank() ||
-                                nome.isBlank() ||
-                                cognome.isBlank() ||
-                                password.isBlank() ||
-                                confermaPassword.isBlank() -> {
+                            nome.isBlank() ||
+                            cognome.isBlank() ||
+                            password.isBlank() ||
+                            confermaPassword.isBlank() -> {
 
-                            onErrorChange("Compila tutti i campi")
-                            //errorMessage = "Compila tutti i campi"
+                                onErrorChange("Compila tutti i campi")
+                                //errorMessage = "Compila tutti i campi"
                         }
 
                         !Patterns.EMAIL_ADDRESS
@@ -169,6 +170,8 @@ fun RegisterForm (
                         else -> {
                             // Registrazione corretta
                             // TODO salvataggio account
+                            onRegister()
+                            /*
                             navController.navigate(Routes.Home.route) {
 
                                 popUpTo(Routes.Home.route) {
@@ -177,7 +180,7 @@ fun RegisterForm (
 
                                 launchSingleTop = true
                                 restoreState = true
-                            }
+                            }*/
                         }
                     }
                 },

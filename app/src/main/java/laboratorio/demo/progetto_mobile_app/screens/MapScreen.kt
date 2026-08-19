@@ -1,4 +1,9 @@
-package laboratorio.demo.progetto_mobile_app.main_activity
+package laboratorio.demo.progetto_mobile_app.screens
 
-class MapScreen {
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+
+@Composable
+fun MapScreen() {
+    Text("Schermata Mappa")
 }

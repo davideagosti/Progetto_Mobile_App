@@ -25,7 +25,8 @@ fun LoginPortrait(
 
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onErrorChange: (String) -> Unit
+    onErrorChange: (String) -> Unit,
+    onLogin: () -> Unit
 ) {
 
     Column (
@@ -72,7 +73,8 @@ fun LoginPortrait(
 
             onEmailChange = onEmailChange,
             onPasswordChange = onPasswordChange,
-            onErrorChange = onErrorChange
+            onErrorChange = onErrorChange,
+            onLogin = onLogin
         )
 
         Spacer( modifier = Modifier.height(20.dp) )
@@ -95,7 +97,8 @@ fun LoginPortraitPreview() {
 
             onEmailChange = {},
             onPasswordChange = {},
-            onErrorChange = {}
+            onErrorChange = {},
+            onLogin = {}
         )
     }
 }

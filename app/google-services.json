@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "417830335455",
+    "project_id": "databasesmarttravelplanner",
+    "storage_bucket": "databasesmarttravelplanner.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:417830335455:android:6f6dac88587c0317578a6a",
+        "android_client_info": {
+          "package_name": "laboratorio.demo.progetto_mobile_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAfzEUi-YFw9EO2--QaPPm98wo5X5VAbI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

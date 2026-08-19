@@ -5,8 +5,11 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
 
 import androidx.navigation.NavController
+import laboratorio.demo.progetto_mobile_app.navigation.Routes
 import laboratorio.demo.progetto_mobile_app.components.isLandscape
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,9 +22,61 @@ fun RegisterScreen(navController: NavController) {
     var confermaPassword by rememberSaveable { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf("") }
 
-//    RegisterForm(
-//        navController = navController
-//    )
+    val auth = remember {
+        FirebaseAuth.getInstance()
+    }
+
+    val firestore = remember {
+        FirebaseFirestore.getInstance()
+    }
+
+    fun registerUser() {
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+
+                if (task.isSuccessful) {
+
+                    val user = auth.currentUser
+
+                    if (user != null) {
+
+                        val userData = hashMapOf(
+                            "nome" to nome,
+                            "cognome" to cognome,
+                            "email" to email
+                        )
+
+                        firestore
+                            .collection("users")
+                            .document(user.uid)
+                            .set(userData)
+                            .addOnSuccessListener {
+
+                                navController.navigate(Routes.Home.route) {
+                                    popUpTo(Routes.Login.route) {
+                                        inclusive = true
+                                    }
+
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                            .addOnFailureListener {
+
+                                errorMessage =
+                                    "Account creato, ma errore nel salvataggio dei dati"
+                            }
+                    }
+
+                } else {
+
+                    errorMessage =
+                        task.exception?.message
+                            ?: "Errore durante la registrazione"
+                }
+            }
+    }
 
     if (isLandscape()) {
 
@@ -40,7 +95,8 @@ fun RegisterScreen(navController: NavController) {
             onCognomeChange = { cognome = it },
             onPasswordChange = { password = it },
             onConfermaPasswordChange = { confermaPassword = it },
-            onErrorChange = { errorMessage = it }
+            onErrorChange = { errorMessage = it },
+            onRegister = { registerUser() }
         )
 
     } else {
@@ -60,247 +116,8 @@ fun RegisterScreen(navController: NavController) {
             onCognomeChange = { cognome = it },
             onPasswordChange = { password = it },
             onConfermaPasswordChange = { confermaPassword = it },
-            onErrorChange = { errorMessage = it }
+            onErrorChange = { errorMessage = it },
+            onRegister = { registerUser() }
         )
     }
 }
-
-//    var email by remember { mutableStateOf("") }
-//    var nome by remember { mutableStateOf("") }
-//    var cognome by remember { mutableStateOf("") }
-//    var password by remember { mutableStateOf("") }
-//    var confermaPassword by remember { mutableStateOf("") }
-//    var errorMessage by remember { mutableStateOf("") }
-//
-//    Box(
-//        modifier = Modifier.fillMaxSize()
-//    ) {
-//
-//        BackButton(
-////            navController = navController,
-//            modifier = Modifier
-//                .align(Alignment.TopStart)
-//                .padding(16.dp)
-//                .zIndex(1f),
-//            onClick = {
-//                navController.popBackStack(
-//                    Routes.Home,
-//                    false
-//                )
-//            }
-//
-////            onClick = {
-////                navController.navigate(Routes.Home) {
-////                    popUpTo(Routes.Home) {
-////                        inclusive = false
-////                    }
-////                    launchSingleTop = true
-////                    restoreState = true
-////                }
-////            }
-//        )
-//
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                //.fillMaxWidth()
-//                //.wrapContentHeight()
-//                .verticalScroll(rememberScrollState())
-//                .padding(start = 20.dp,
-//                    end = 20.dp,
-//                    top = 70.dp,
-//                    bottom = 20.dp
-//                ),
-//
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//
-//            verticalArrangement = Arrangement.Top
-//        ) {
-//
-////            Row(
-////                modifier = Modifier.fillMaxWidth()
-////            ) {
-////                BackButton(navController)
-////            }
-//
-//            // Logo
-//            Image(
-//                painter = painterResource(R.drawable.google_maps_image),
-//                contentDescription = null,
-//                modifier = Modifier.size(90.dp)
-//            )
-//
-//    //        Text(
-//    //            text = "Registrazione"
-//    //        )
-//
-//            Spacer(modifier = Modifier.height(20.dp))
-//
-//            // CARD FORM
-//            Card(
-//                modifier = Modifier
-//                    .fillMaxWidth(),
-//                shape = RoundedCornerShape(20.dp),
-//                colors = CardDefaults.cardColors(
-//                    containerColor = Color(0xFFF2F2F2)
-//                ),
-//                elevation = CardDefaults.cardElevation(
-//                    defaultElevation = 6.dp
-//                )
-//            ) {
-//
-//                Column(
-//                    modifier = Modifier
-////                        .fillMaxSize()
-//                        .fillMaxWidth()
-//                        .wrapContentHeight()
-//                        .padding(20.dp),
-//                    verticalArrangement = Arrangement.spacedBy(16.dp),
-//                    horizontalAlignment = Alignment.CenterHorizontally,
-//                ) {
-//
-//                    Text(
-//                        text = "Registra e crea il tuo account",
-//                        fontSize = 24.sp,
-//                        fontWeight = FontWeight.Bold
-//                        //style = MaterialTheme.typography.headlineMedium
-//                        //style = MaterialTheme.typography.bodyLarge
-//                    )
-//
-//    //        Text(
-//    //            text = "Registrazione",
-//    //            style = MaterialTheme.typography.headlineMedium
-//    //        )
-//
-//                    OutlinedTextField(
-//                        value = email,
-//                        onValueChange = { email = it },
-//                        label = { Text("Email") },
-//                        modifier = Modifier.fillMaxWidth()
-//                    )
-//
-//                    OutlinedTextField(
-//                        value = nome,
-//                        onValueChange = { nome = it },
-//                        label = { Text("Nome") },
-//                        modifier = Modifier.fillMaxWidth()
-//                    )
-//
-//                    OutlinedTextField(
-//                        value = cognome,
-//                        onValueChange = { cognome = it },
-//                        label = { Text("Cognome") },
-//                        modifier = Modifier.fillMaxWidth()
-//                    )
-//
-//                    OutlinedTextField(
-//                        value = password,
-//                        onValueChange = { password = it },
-//                        label = { Text("Password") },
-//                        visualTransformation = PasswordVisualTransformation(),
-//                        modifier = Modifier.fillMaxWidth()
-//                    )
-//
-//                    OutlinedTextField(
-//                        value = confermaPassword,
-//                        onValueChange = {
-//                            confermaPassword = it
-//                        },
-//                        label = {
-//                            Text("Conferma Password")
-//                        },
-//                        visualTransformation = PasswordVisualTransformation(),
-//                        modifier = Modifier.fillMaxWidth()
-//                    )
-//
-//                    Button(
-//                        onClick = {
-//                            // TODO: registrazione
-//                            errorMessage = ""
-//
-//                            when {
-//                                email.isBlank() ||
-//                                        nome.isBlank() ||
-//                                        cognome.isBlank() ||
-//                                        password.isBlank() ||
-//                                        confermaPassword.isBlank() -> {
-//
-//                                    errorMessage = "Compila tutti i campi"
-//                                }
-//
-//                                !android.util.Patterns.EMAIL_ADDRESS
-//                                    .matcher(email)
-//                                    .matches() -> {
-//
-//                                    errorMessage = "Inserisci una email valida"
-//                                }
-//
-//                                password.length < 8 -> {
-//                                    errorMessage =
-//                                        "La password deve contenere almeno 8 caratteri"
-//                                }
-//
-//                                password != confermaPassword -> {
-//                                    errorMessage =
-//                                        "Le password non coincidono"
-//                                }
-//
-//                                else -> {
-//                                    // Registrazione corretta
-//                                    // TODO salvataggio account
-//                                    navController.navigate(Routes.Home) {
-//
-//                                        popUpTo(Routes.Home) {
-//                                            inclusive = true
-//                                        }
-//
-//                                        launchSingleTop = true
-//                                        restoreState = true
-//                                    }
-//                                }
-//                            }
-//                        },
-//                        modifier = Modifier.fillMaxWidth()
-//                    ) {
-//                        Text("Registrati")
-//                    }
-//
-//                    if (errorMessage.isNotEmpty()) {
-//
-//                        Text(
-//                            text = errorMessage,
-//                            //color = Color.Red,
-//                            color = MaterialTheme.colorScheme.error,
-//                            fontSize = 14.sp
-//                        )
-//
-//                    }
-//
-//                    TextButton(
-//                        onClick = {
-//                            // TODO Login
-//                            navController.navigate(Routes.Login)
-//
-//                        }
-//                    ) {
-//                        Text("Hai già un account? Accedi")
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-//}
-
-//@Preview(
-//    showBackground = true,
-//    showSystemUi = true
-//)
-//@Composable
-//fun RegisterScreenPreview() {
-//    MaterialTheme {
-//        RegisterScreen(
-//            navController = rememberNavController()
-//        )
-//    }
-//}

@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -24,7 +23,8 @@ fun LoginForm(
 
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onErrorChange: (String) -> Unit
+    onErrorChange: (String) -> Unit,
+    onLogin: () -> Unit
 ) {
 
     Card(
@@ -90,17 +90,8 @@ fun LoginForm(
                 value = password,
 
                 onValueChange = onPasswordChange,
-//                onValueChange = {
-//                    onPasswordChange(it)
-//                },
 
                 label = "Password",
-//                label = {
-//                    Text("Password")
-//                },
-
-//                visualTransformation =
-//                PasswordVisualTransformation(),
 
                 modifier = Modifier.fillMaxWidth()
             )
@@ -111,7 +102,7 @@ fun LoginForm(
 
             Button(
                 onClick = {
-
+                    // TODO: Login
                     onErrorChange("")
 
                     when {
@@ -143,6 +134,8 @@ fun LoginForm(
                             // TODO:
                             // collegamento database/server
 
+                            onLogin()
+                            /*
                             navController.navigate(
                                 Routes.Home.route
                             ) {
@@ -156,7 +149,7 @@ fun LoginForm(
                                 launchSingleTop = true
 
                                 restoreState = true
-                            }
+                            }*/
                         }
                     }
                 },
@@ -190,7 +183,7 @@ fun LoginForm(
 
             TextButton(
                 onClick = {
-
+                    // TODO Login
                     navController.navigate(
                         Routes.Register.route
                     )

@@ -25,10 +25,15 @@ import laboratorio.demo.progetto_mobile_app.navigation.Routes
 import androidx.compose.material3.Divider
 import androidx.navigation.compose.rememberNavController
 
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 @Composable
 fun AccountMenu( navController: NavController) {
-//fun AccountMenu () {
 
+    // ==========================================
+    // STATO MENU
+    // ==========================================
 
     var menuOpen by remember {
         mutableStateOf(false)
@@ -39,9 +44,83 @@ fun AccountMenu( navController: NavController) {
         mutableStateOf(false)
     }
 
+    // Stato del popup di logout
+    var showLogoutDialog by remember {
+        mutableStateOf(false)
+    }
+
+    // ==========================================
+    // ACTIVITY
+    // ==========================================
+
     // Recupera l'Activity corrente
     val activity =
         LocalContext.current as? Activity
+
+    // ==========================================
+    // FIREBASE
+    // ==========================================
+
+    val auth = remember {
+        FirebaseAuth.getInstance()
+    }
+
+    val firestore = remember {
+        FirebaseFirestore.getInstance()
+    }
+
+
+    // ==========================================
+    // UTENTE AUTENTICATO
+    // ==========================================
+
+    val currentUser = auth.currentUser
+
+    // ==========================================
+    // DATI UTENTE
+    // ==========================================
+
+    var nome by remember {
+        mutableStateOf("")
+    }
+
+    var cognome by remember {
+        mutableStateOf("")
+    }
+
+
+    // ==========================================
+    // RECUPERO DATI DA FIRESTORE
+    // ==========================================
+
+    LaunchedEffect(currentUser?.uid) {
+
+        if (currentUser != null) {
+
+            firestore
+                .collection("users")
+                .document(currentUser.uid)
+                .get()
+                .addOnSuccessListener { document ->
+
+                    if (document.exists()) {
+
+                        nome =
+                            document.getString("nome")
+                                ?: ""
+
+                        cognome =
+                            document.getString("cognome")
+                                ?: ""
+                    }
+                }
+        }
+    }
+
+
+    // ==========================================
+    // ACCOUNT MENU
+    // ==========================================
 
 
     // Contenitore dell'icona account e del suo menu
@@ -85,38 +164,111 @@ fun AccountMenu( navController: NavController) {
 
         // Il menu viene creato solo quando viene aperto
         // Evita rallentamenti all'avvio dell'app
-//        if(menuOpen){
+        DropdownMenu(
 
+            // Il menu è già visibile perché creato dentro l'if
+            expanded = menuOpen,
 
-            DropdownMenu(
+            // Chiusura del menu cliccando fuori
+            onDismissRequest = {
+                menuOpen = false
+            },
 
-                // Il menu è già visibile perché creato dentro l'if
-                expanded = menuOpen,
+            // Dimensione del riquadro menu
+            modifier = Modifier.width(260.dp)
 
-                // Chiusura del menu cliccando fuori
-                onDismissRequest = {
-                    menuOpen = false
-                },
+        ){
 
-                // Dimensione del riquadro menu
-                modifier = Modifier.width(220.dp)
+            // ===========================
+            // SEZIONE ACCESSO ACCOUNT
+            // ===========================
 
-            ){
+            Text(
+                text="Account",
+                fontSize=13.sp,
+                color=Color.Gray,
+                modifier=
+                Modifier.padding(
+                    16.dp
+                )
+            )
 
-                // ===========================
-                // SEZIONE ACCESSO ACCOUNT
-                // ===========================
+            if (currentUser != null) {
+
+                // ==================================
+                // NOME E COGNOME
+                // ==================================
 
                 Text(
-                    text="Account",
-                    fontSize=13.sp,
-                    color=Color.Gray,
-                    modifier=
-                    Modifier.padding(
-                        16.dp
+                    text = if (
+                        nome.isNotBlank() ||
+                        cognome.isNotBlank()
+                    ) {
+                        "$nome $cognome"
+                    } else {
+                        "Utente"
+                    },
+
+                    fontSize = 17.sp,
+
+                    style = MaterialTheme.typography.titleMedium,
+
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 4.dp
                     )
                 )
 
+
+                // ==================================
+                // EMAIL
+                // ==================================
+
+                Text(
+                    text = currentUser.email
+                        ?: "Email non disponibile",
+
+                    fontSize = 13.sp,
+
+                    color = Color.Gray,
+
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 2.dp,
+                        bottom = 12.dp
+                    )
+                )
+
+
+            } else {
+
+                // ==================================
+                // UTENTE NON AUTENTICATO
+                // ==================================
+
+                Text(
+                    text = "Nessun account autenticato",
+
+                    fontSize = 14.sp,
+
+                    color = Color.Gray,
+
+                    modifier = Modifier.padding(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 4.dp,
+                        bottom = 12.dp
+                    )
+                )
+            }
+
+            // ==================================
+            // ACCESSO / REGISTRAZIONE
+            // ==================================
+
+            if (currentUser == null) {
 
                 // Opzione registrazione nuovo utente
                 DropdownMenuItem(
@@ -125,20 +277,18 @@ fun AccountMenu( navController: NavController) {
 
                         Icon(
                             Icons.Default.PersonAdd,
-                            null
+                            contentDescription = null
                         )
-
                     },
 
-                    text={
+                    text = {
                         Text("Registrati")
                     },
 
-                    onClick={
+                    onClick = {
                         menuOpen = false
                         navController.navigate(Routes.Register.route)
                         // TODO: apertura pagina registrazione
-                        //navController.navigate("register")
                     }
                 )
 
@@ -150,201 +300,262 @@ fun AccountMenu( navController: NavController) {
 
                         Icon(
                             Icons.Default.Login,
-                            null
+                            contentDescription = null
                         )
-
                     },
 
-                    text={
+                    text = {
                         Text("Accedi")
                     },
 
-                    onClick={
+                    onClick = {
                         menuOpen = false
                         navController.navigate(Routes.Login.route)
                         // TODO: apertura pagina login
-                        //navController.navigate("login")
                     }
                 )
-
-
-                // Separatore tra accesso e gestione account
-                Divider(
-                    thickness = 2.dp,
-                    color = Color.LightGray,
-                    modifier = Modifier.padding(
-                        vertical = 8.dp
-                    )
-                )
-
-
-                // ===========================
-                // SEZIONE GESTIONE ACCOUNT
-                // ===========================
-
-                Text(
-                    text = "Gestione account",
-                    fontSize = 13.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(
-                        start = 16.dp,
-                        top = 4.dp,
-                        bottom = 4.dp
-                    )
-                )
-
-                // Modifica dati account
-                DropdownMenuItem(
-
-                    leadingIcon = {
-
-                        Icon(
-                            Icons.Default.ManageAccounts,
-                            null
-                        )
-
-                    },
-
-                    text={
-                        Text("Modifica account")
-                    },
-
-                    onClick={
-                        menuOpen=false
-                        // TODO: modifica nome/password
-                    }
-                )
-
-
-                // Disconnessione account
-                DropdownMenuItem(
-
-                    leadingIcon = {
-
-                        Icon(
-                            Icons.Default.Logout,
-                            null
-                        )
-
-                    },
-
-                    text={
-                        Text("Disconnetti")
-                    },
-
-                    onClick={
-                        menuOpen=false
-                        // TODO: logout account
-                    }
-                )
-
-
-
-                Divider(
-                    thickness = 2.dp,
-                    color = Color.LightGray,
-                    modifier = Modifier.padding(
-                        vertical = 8.dp
-                    )
-                )
-
-                // ===========================
-                // SEZIONE APPLICAZIONE
-                // ===========================
-
-                // Chiusura applicazione
-                DropdownMenuItem(
-
-                    leadingIcon = {
-
-                        Icon(
-                            Icons.Default.ExitToApp,
-                            null
-                        )
-
-                    },
-
-
-                    text={
-                        Text("Chiudi applicazione")
-                    },
-
-
-                    onClick={
-
-                        // Chiude il menu
-                        menuOpen=false
-
-                        // Mostra la finestra di conferma
-                        showExitDialog=true
-
-                        // Chiude l'Activity corrente
-                        // activity?.finish()
-                        // TODO: chiusura app
-
-                    }
-                )
-
             }
-//        }
+
+            // Separatore tra accesso e gestione account
+            Divider(
+                thickness = 2.dp,
+                color = Color.LightGray,
+                modifier = Modifier.padding(
+                    vertical = 8.dp
+                )
+            )
+
+            // ===========================
+            // SEZIONE GESTIONE ACCOUNT
+            // ===========================
+
+            Text(
+                text = "Gestione account",
+                fontSize = 13.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(
+                    start = 16.dp,
+                    top = 4.dp,
+                    bottom = 4.dp
+                )
+            )
+
+            // Modifica dati account
+            DropdownMenuItem(
+
+                leadingIcon = {
+
+                    Icon(
+                        Icons.Default.ManageAccounts,
+                        null
+                    )
+                },
+
+                text = {
+                    Text("Modifica account")
+                },
+
+                onClick = {
+                    menuOpen=false
+                    // TODO: modifica nome/password
+
+                    navController.navigate(
+                        Routes.EditAccount.route
+                    )
+                }
+            )
+
+
+            // Disconnessione account
+            DropdownMenuItem(
+
+                leadingIcon = {
+
+                    Icon(
+                        Icons.Default.Logout,
+                        contentDescription = null
+                    )
+                },
+
+                text = {
+                    Text("Disconnetti")
+                },
+
+                onClick = {
+                    menuOpen = false
+                    // TODO: logout account
+
+                    // Mostra conferma logout
+                    showLogoutDialog = true
+                    // FirebaseAuth.getInstance().signOut()
+                }
+            )
+
+
+
+            Divider(
+                thickness = 2.dp,
+                color = Color.LightGray,
+                modifier = Modifier.padding(
+                    vertical = 8.dp
+                )
+            )
+
+            // ===========================
+            // SEZIONE APPLICAZIONE
+            // ===========================
+
+            // Chiusura applicazione
+            DropdownMenuItem(
+
+                leadingIcon = {
+
+                    Icon(
+                        Icons.Default.ExitToApp,
+                        contentDescription = null
+                    )
+                },
+
+
+                text = {
+                    Text("Chiudi applicazione")
+                },
+
+
+                onClick = {
+
+                    // Chiude il menu
+                    menuOpen = false
+
+                    // Mostra la finestra di conferma
+                    showExitDialog = true
+
+                    // Chiude l'Activity corrente
+                    // activity?.finish()
+                    // TODO: chiusura app
+                }
+            )
+        }
     }
 
     // ===========================
     // Finestra di conferma uscita
     // ===========================
 
-    if(showExitDialog){
-
+    if (showLogoutDialog) {
 
         AlertDialog(
 
-            onDismissRequest={
-                showExitDialog=false
+            onDismissRequest = {
+                showLogoutDialog = false
             },
 
+            title = {
+                Text("Disconnettere l'account?")
+            },
 
-            title={
+            text = {
+                Text(
+                    "Sei sicuro di voler disconnettere il tuo account?"
+                )
+            },
+
+            confirmButton = {
+
+                TextButton(
+
+                    onClick = {
+
+                        // Chiude il popup
+                        showLogoutDialog = false
+
+                        // Logout Firebase
+                        FirebaseAuth
+                            .getInstance()
+                            .signOut()
+
+                        // Torna alla schermata Login
+                        navController.navigate(
+                            Routes.Login.route
+                        ) {
+
+                            // Rimuove le schermate precedenti
+                            popUpTo(
+                                Routes.Home.route
+                            ) {
+                                inclusive = true
+                            }
+
+                            launchSingleTop = true
+                        }
+                    }
+
+                ) {
+
+                    Text("Disconnetti")
+                }
+            },
+
+            dismissButton = {
+
+                TextButton(
+
+                    onClick = {
+                        showLogoutDialog = false
+                    }
+
+                ) {
+
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+    if(showExitDialog) {
+
+        AlertDialog (
+
+            onDismissRequest = {
+                showExitDialog = false
+            },
+
+            title = {
                 Text("Chiudere l'app?")
             },
 
-
-            text={
+            text = {
                 Text(
                     "Sei sicuro di voler chiudere Smart Travel Planner?"
                 )
             },
 
-
-            confirmButton={
+            confirmButton = {
 
                 TextButton(
 
-                    onClick={
+                    onClick = {
 
-                        showExitDialog=false
+                        showExitDialog = false
 
                         // Chiude l'app
                         activity?.finish()
-
                     }
-
-                ){
+                ) {
 
                     Text("Chiudi")
-
                 }
             },
 
-
-            dismissButton={
+            dismissButton = {
 
                 TextButton(
 
-                    onClick={
-                        showExitDialog=false
+                    onClick = {
+                        showExitDialog = false
                     }
 
-                ){
+                ) {
 
                     Text("Annulla")
 
@@ -359,6 +570,7 @@ fun AccountMenu( navController: NavController) {
     showBackground = true,
     showSystemUi = true
 )
+
 @Composable
 fun AccountMenuPreview() {
 
