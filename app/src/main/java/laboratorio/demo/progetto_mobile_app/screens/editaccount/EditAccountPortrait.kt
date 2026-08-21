@@ -43,7 +43,8 @@ fun EditAccountPortrait(
     onConfermaNuovaPasswordChange: (String) -> Unit,
 
     onSaveClick: () -> Unit,
-    onChangePasswordClick: () -> Unit
+    onChangePasswordClick: () -> Unit,
+    onDeleteAccountClick: () -> Unit
 
 ) {
 
@@ -126,8 +127,8 @@ fun EditAccountPortrait(
             onConfermaNuovaPasswordChange = onConfermaNuovaPasswordChange,
 
             onSaveClick = onSaveClick,
-
-            onChangePasswordClick = onChangePasswordClick
+            onChangePasswordClick = onChangePasswordClick,
+            onDeleteAccountClick = onDeleteAccountClick
         )
 
 
@@ -172,7 +173,8 @@ fun EditAccountPortraitPreview() {
             onConfermaNuovaPasswordChange = {},
 
             onSaveClick = {},
-            onChangePasswordClick = {}
+            onChangePasswordClick = {},
+            onDeleteAccountClick = {}
         )
     }
 }

@@ -43,7 +43,8 @@ fun EditAccountLandscape(
     onConfermaNuovaPasswordChange: (String) -> Unit,
 
     onSaveClick: () -> Unit,
-    onChangePasswordClick: () -> Unit
+    onChangePasswordClick: () -> Unit,
+    onDeleteAccountClick: () -> Unit
 
 ) {
 
@@ -122,8 +123,8 @@ fun EditAccountLandscape(
             onConfermaNuovaPasswordChange = onConfermaNuovaPasswordChange,
 
             onSaveClick = onSaveClick,
-
-            onChangePasswordClick = onChangePasswordClick
+            onChangePasswordClick = onChangePasswordClick,
+            onDeleteAccountClick = onDeleteAccountClick
         )
 
 
@@ -170,7 +171,8 @@ fun EditAccountLandscapePreview() {
             onConfermaNuovaPasswordChange = {},
 
             onSaveClick = {},
-            onChangePasswordClick = {}
+            onChangePasswordClick = {},
+            onDeleteAccountClick = {}
         )
     }
 }

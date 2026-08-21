@@ -41,7 +41,8 @@ fun EditAccountForm(
     onConfermaNuovaPasswordChange: (String) -> Unit,
 
     onSaveClick: () -> Unit,
-    onChangePasswordClick: () -> Unit
+    onChangePasswordClick: () -> Unit,
+    onDeleteAccountClick: () -> Unit
 
 ) {
 
@@ -314,6 +315,33 @@ fun EditAccountForm(
 
                     fontSize = 14.sp
                 )
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(
+                    vertical = 8.dp
+                )
+            )
+
+            Text(
+                text = "Zona pericolosa",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.error
+            )
+
+            Text(
+                text = "L'eliminazione dell'account è permanente e non può essere annullata.",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+
+            Button(
+                onClick = onDeleteAccountClick,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
+            ) {
+                Text("Elimina account")
             }
         }
     }

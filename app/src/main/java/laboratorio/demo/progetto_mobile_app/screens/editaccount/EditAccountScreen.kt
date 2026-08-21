@@ -7,7 +7,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 
-import com.google.firebase.firestore.SetOptions
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import laboratorio.demo.progetto_mobile_app.components.PasswordTextField
+
+
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -82,6 +97,26 @@ fun EditAccountScreen(
 
     var passwordSuccessMessage by rememberSaveable {
         mutableStateOf("")
+    }
+
+    // ==========================================
+    // CANCELLAZIONE ACCOUNT
+    // ==========================================
+
+    var showDeleteDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    var deletePassword by rememberSaveable {
+        mutableStateOf("")
+    }
+
+    var deleteErrorMessage by rememberSaveable {
+        mutableStateOf("")
+    }
+
+    var isDeletingAccount by rememberSaveable {
+        mutableStateOf(false)
     }
 
     // ==========================================
@@ -323,7 +358,240 @@ fun EditAccountScreen(
                     "La password attuale non è corretta"
             }
     }
+    // ==========================================
+    // RIMOZIONE ACCOUNT
+    // ==========================================
 
+    fun deleteAccount() {
+
+        val user = auth.currentUser
+
+        if (user == null) {
+
+            deleteErrorMessage =
+                "Nessun utente autenticato"
+
+            return
+        }
+
+        if (deletePassword.isBlank()) {
+
+            deleteErrorMessage =
+                "Inserisci la password attuale"
+
+            return
+        }
+
+        val email = user.email
+
+        if (email == null) {
+
+            deleteErrorMessage =
+                "Impossibile recuperare l'email dell'account"
+
+            return
+        }
+
+        deleteErrorMessage = ""
+        isDeletingAccount = true
+
+        // ==========================================
+        // RIAUTENTICAZIONE
+        // ==========================================
+
+        val credential =
+            EmailAuthProvider.getCredential(
+                email,
+                deletePassword
+            )
+
+        user.reauthenticate(credential)
+
+            .addOnSuccessListener {
+
+                // ==========================================
+                // PASSWORD CORRETTA
+                // ==========================================
+
+                // Prima eliminia il documento Firestore
+
+                firestore
+                    .collection("users")
+                    .document(user.uid)
+                    .delete()
+
+                    .addOnSuccessListener {
+
+                        // ==========================================
+                        // ELIMINA ACCOUNT FIREBASE AUTH
+                        // ==========================================
+
+                        user.delete()
+
+                            .addOnSuccessListener {
+
+                                isDeletingAccount = false
+
+                                deletePassword = ""
+                                deleteErrorMessage = ""
+                                showDeleteDialog = false
+
+                                // ==========================================
+                                // TORNA AL LOGIN
+                                // ==========================================
+
+                                navController.navigate("login") {
+
+                                    popUpTo(0) {
+                                        inclusive = true
+                                    }
+
+                                }
+                            }
+
+                            .addOnFailureListener {
+
+                                isDeletingAccount = false
+
+                                deleteErrorMessage =
+                                    "Errore durante l'eliminazione dell'account"
+                            }
+                    }
+
+                    .addOnFailureListener {
+
+                        isDeletingAccount = false
+
+                        deleteErrorMessage =
+                            "Errore durante l'eliminazione dei dati dell'account"
+                    }
+            }
+
+            .addOnFailureListener {
+
+                isDeletingAccount = false
+
+                deleteErrorMessage = "La password attuale non è corretta"
+            }
+    }
+
+    // Messaggio di conferma Delete Account
+    if (showDeleteDialog) {
+
+        AlertDialog(
+
+            onDismissRequest = {
+
+                if (!isDeletingAccount) {
+
+                    showDeleteDialog = false
+                    deletePassword = ""
+                    deleteErrorMessage = ""
+                }
+            },
+
+            title = {
+                Text(
+                    text = "Eliminare l'account?"
+                )
+            },
+
+            text = {
+
+                Column {
+
+                    Text(
+                        text =
+                        "Questa operazione è permanente. " +
+                                "Tutti i dati dell'account verranno eliminati."
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(16.dp)
+                    )
+
+                    PasswordTextField(
+                        value = deletePassword,
+
+                        onValueChange = {value: String ->
+                            deletePassword = value
+                            deleteErrorMessage = ""
+                        },
+
+                        label = "Password attuale",
+
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (deleteErrorMessage.isNotEmpty()) {
+
+                        Spacer(
+                            modifier = Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text = deleteErrorMessage,
+
+                            color =
+                            MaterialTheme
+                                .colorScheme
+                                .error
+                        )
+                    }
+                }
+            },
+
+            confirmButton = {
+
+                Button(
+
+                    onClick = {
+                        deleteAccount()
+                    },
+
+                    enabled =
+                    !isDeletingAccount &&
+                            deletePassword.isNotBlank()
+                ) {
+
+                    if (isDeletingAccount) {
+
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+
+                    } else {
+
+                        Text(
+                            text = "Elimina definitivamente"
+                        )
+                    }
+                }
+            },
+
+            dismissButton = {
+
+                TextButton(
+
+                    onClick = {
+
+                        if (!isDeletingAccount) {
+
+                            showDeleteDialog = false
+                            deletePassword = ""
+                            deleteErrorMessage = ""
+                        }
+                    },
+
+                    enabled = !isDeletingAccount
+                ) {
+
+                    Text("Annulla")
+                }
+            }
+        )
+    }
 
     // ==========================================
     // INTERFACCIA
@@ -375,6 +643,12 @@ fun EditAccountScreen(
 
             onChangePasswordClick = {
                 changePassword()
+            },
+
+            onDeleteAccountClick = {
+                deleteErrorMessage = ""
+                deletePassword = ""
+                showDeleteDialog = true
             }
         )
 
@@ -424,6 +698,12 @@ fun EditAccountScreen(
 
             onChangePasswordClick = {
                 changePassword()
+            },
+
+            onDeleteAccountClick = {
+                deleteErrorMessage = ""
+                deletePassword = ""
+                showDeleteDialog = true
             }
         )
     }
