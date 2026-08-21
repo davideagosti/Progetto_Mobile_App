@@ -92,7 +92,6 @@ fun MapSection(
             }
         }
 
-
         // ==========================================
         // CONTROLLI PERSONALIZZATI
         // ==========================================
@@ -112,7 +111,7 @@ fun MapSection(
         // =========================
         // PULSANTE POSIZIONE
         // =========================
-/*
+        /*
         FloatingActionButton(
             onClick = onMyLocationClick,
 

@@ -1,9 +1,5 @@
 package laboratorio.demo.progetto_mobile_app.navigation
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
-import laboratorio.demo.progetto_mobile_app.R
-
 sealed class Routes(
 
     val route: String,
@@ -40,9 +36,11 @@ sealed class Routes(
         showTopBar = true,
         showBottomBar = false
     )
+
+    object EditAccount : Routes(
+        route = "edit_account",
+        title = "Modifica account",
+        showTopBar = true,
+        showBottomBar = false
+    )
 }
-//object Routes {
-//    const val Home = "home"
-//    const val Register = "register"
-//    const val Login = "login"
-//}

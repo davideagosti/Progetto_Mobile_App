@@ -32,6 +32,11 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
 
+        <!-- Libreria legacy di Maps -->
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
+
         <!-- android:theme="@style/Theme.Progetto_Mobile_App.Splash"> -->
         <activity
             android:name=".main_activity.MainActivity"
