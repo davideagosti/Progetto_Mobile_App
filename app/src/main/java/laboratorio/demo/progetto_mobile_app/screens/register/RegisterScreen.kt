@@ -78,7 +78,9 @@ fun RegisterScreen(navController: NavController) {
             }
     }
 
-    if (isLandscape()) {
+    val landscape = isLandscape()
+
+    if (landscape) {
 
         RegisterLandscape(
             navController = navController,

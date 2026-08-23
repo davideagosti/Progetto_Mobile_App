@@ -51,7 +51,9 @@ fun LoginScreen(navController: NavController) {
             }
     }
 
-    if (isLandscape()) {
+    val landscape = isLandscape()
+
+    if (landscape) {
         LoginLandscape(
             navController = navController,
 

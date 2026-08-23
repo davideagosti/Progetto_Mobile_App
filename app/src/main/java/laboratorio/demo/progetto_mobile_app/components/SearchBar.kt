@@ -1,6 +1,5 @@
 package laboratorio.demo.progetto_mobile_app.components
 
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,7 +24,6 @@ fun SearchBar(
         value = searchText,
 
         onValueChange = {newText ->
-            //searchText = it
             onSearchTextChange(newText)
         },
 

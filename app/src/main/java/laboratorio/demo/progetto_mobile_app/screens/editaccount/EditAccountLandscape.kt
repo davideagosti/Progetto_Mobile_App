@@ -35,6 +35,9 @@ fun EditAccountLandscape(
 
     isLoading: Boolean,
 
+    isSavingAccount : Boolean,
+    isChangingPassword : Boolean,
+
     onNomeChange: (String) -> Unit,
     onCognomeChange: (String) -> Unit,
 
@@ -115,6 +118,9 @@ fun EditAccountLandscape(
 
             isLoading = isLoading,
 
+            isSavingAccount = isSavingAccount,
+            isChangingPassword = isChangingPassword,
+
             onNomeChange = onNomeChange,
             onCognomeChange = onCognomeChange,
 
@@ -162,6 +168,9 @@ fun EditAccountLandscapePreview() {
             passwordSuccessMessage = "",
 
             isLoading = false,
+
+            isSavingAccount = false,
+            isChangingPassword = false,
 
             onNomeChange = {},
             onCognomeChange = {},

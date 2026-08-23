@@ -25,6 +25,7 @@ import laboratorio.demo.progetto_mobile_app.R
 @Composable
 fun RegisterLandscape(
     navController: NavController,
+
     email: String,
     nome: String,
     cognome: String,
@@ -42,7 +43,6 @@ fun RegisterLandscape(
 ) {
 
             Column(
-                //modifier = Modifier.weight(1f)
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
@@ -100,7 +100,7 @@ fun RegisterLandscape(
 
 @Preview(
     showBackground = true,
-    //showSystemUi = true,
+    showSystemUi = true,
     widthDp = 1000,
     heightDp = 900
 )

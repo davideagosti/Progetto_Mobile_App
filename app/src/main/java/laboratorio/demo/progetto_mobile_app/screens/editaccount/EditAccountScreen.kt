@@ -6,22 +6,30 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import laboratorio.demo.progetto_mobile_app.components.PasswordTextField
-
 
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -127,17 +135,36 @@ fun EditAccountScreen(
         mutableStateOf(true)
     }
 
+    var isSavingAccount by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    var isChangingPassword by rememberSaveable {
+        mutableStateOf(false)
+    }
+
     // ==========================================
     // CARICAMENTO DATI UTENTE DA FIRESTORE
     // ==========================================
+
+    var datiCaricati by rememberSaveable {
+        mutableStateOf(false)
+    }
 
     LaunchedEffect(currentUser?.uid) {
 
         if (currentUser == null) {
 
             accountErrorMessage = "Nessun utente autenticato"
-            isLoading = false
+            isLoading = true
 
+            return@LaunchedEffect
+        }
+
+        // Se i dati sono già stati caricati,
+        // non ricarica da Firestore
+        if (datiCaricati) {
+            isLoading = false
             return@LaunchedEffect
         }
 
@@ -145,6 +172,7 @@ fun EditAccountScreen(
             .collection("users")
             .document(currentUser.uid)
             .get()
+
             .addOnSuccessListener { document ->
 
                 if (document.exists()) {
@@ -154,6 +182,8 @@ fun EditAccountScreen(
 
                     cognome =
                         document.getString("cognome") ?: ""
+
+                    datiCaricati = true
                 } else {
 
                     accountErrorMessage = "Dati account non trovati"
@@ -205,7 +235,7 @@ fun EditAccountScreen(
         accountErrorMessage = ""
         accountSuccessMessage = ""
 
-        isLoading = true
+        isSavingAccount = true
 
         val userData = hashMapOf<String, Any>(
             "nome" to nome.trim(),
@@ -223,13 +253,13 @@ fun EditAccountScreen(
             .update(userData)
             .addOnSuccessListener {
 
-                isLoading = false
+                isSavingAccount  = false
 
                 accountSuccessMessage = "Dati aggiornati correttamente"
             }
             .addOnFailureListener {
 
-                isLoading = false
+                isSavingAccount  = false
 
                 accountErrorMessage = "Errore durante il salvataggio"
             }
@@ -287,7 +317,7 @@ fun EditAccountScreen(
         passwordErrorMessage = ""
         passwordSuccessMessage = ""
 
-        isLoading = true
+        isChangingPassword = true
 
         // ==========================================
         // RIAUTENTICAZIONE
@@ -297,7 +327,7 @@ fun EditAccountScreen(
 
         if (email == null) {
 
-            isLoading = false
+            isChangingPassword = false
 
             passwordErrorMessage =
                 "Impossibile recuperare l'email dell'account"
@@ -331,7 +361,7 @@ fun EditAccountScreen(
 
                     .addOnSuccessListener {
 
-                        isLoading = false
+                        isChangingPassword  = false
 
                         vecchiaPassword = ""
                         nuovaPassword = ""
@@ -343,7 +373,7 @@ fun EditAccountScreen(
 
                     .addOnFailureListener {
 
-                        isLoading = false
+                        isChangingPassword = false
 
                         passwordErrorMessage =
                             "Errore durante il cambio password"
@@ -352,12 +382,14 @@ fun EditAccountScreen(
 
             .addOnFailureListener {
 
-                isLoading = false
+                isChangingPassword = false
 
                 passwordErrorMessage =
                     "La password attuale non è corretta"
             }
     }
+
+
     // ==========================================
     // RIMOZIONE ACCOUNT
     // ==========================================
@@ -498,12 +530,16 @@ fun EditAccountScreen(
 
             text = {
 
-                Column {
+                Column (
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .imePadding()
+                ) {
 
                     Text(
                         text =
                         "Questa operazione è permanente. " +
-                                "Tutti i dati dell'account verranno eliminati."
+                        "Tutti i dati dell'account verranno eliminati."
                     )
 
                     Spacer(
@@ -532,10 +568,7 @@ fun EditAccountScreen(
                         Text(
                             text = deleteErrorMessage,
 
-                            color =
-                            MaterialTheme
-                                .colorScheme
-                                .error
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -597,7 +630,9 @@ fun EditAccountScreen(
     // INTERFACCIA
     // ==========================================
 
-    if (isLandscape()) {
+    val landscape = isLandscape()
+
+    if (landscape) {
 
         EditAccountLandscape(
 
@@ -616,6 +651,9 @@ fun EditAccountScreen(
             passwordSuccessMessage = passwordSuccessMessage,
 
             isLoading = isLoading,
+
+            isSavingAccount = isSavingAccount,
+            isChangingPassword = isChangingPassword,
 
             onNomeChange = {
                 nome = it
@@ -671,6 +709,9 @@ fun EditAccountScreen(
             passwordSuccessMessage = passwordSuccessMessage,
 
             isLoading = isLoading,
+
+            isSavingAccount = isSavingAccount,
+            isChangingPassword = isChangingPassword,
 
             onNomeChange = {
                 nome = it

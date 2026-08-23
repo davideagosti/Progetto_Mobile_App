@@ -33,6 +33,9 @@ fun EditAccountForm(
 
     isLoading: Boolean,
 
+    isSavingAccount: Boolean,
+    isChangingPassword: Boolean,
+
     onNomeChange: (String) -> Unit,
     onCognomeChange: (String) -> Unit,
 
@@ -184,11 +187,11 @@ fun EditAccountForm(
 
                 modifier = Modifier.fillMaxWidth(),
 
-                enabled = !isLoading
+                enabled = !isSavingAccount && !isChangingPassword
 
             ) {
 
-                if (isLoading) {
+                if (isSavingAccount) {
 
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
@@ -268,25 +271,8 @@ fun EditAccountForm(
                 modifier = Modifier.fillMaxWidth()
             )
 
-
-            // CAMBIA PASSWORD
-
-            Button(
-
-                onClick = onChangePasswordClick,
-
-                modifier = Modifier.fillMaxWidth(),
-
-                enabled = !isLoading
-
-            ) {
-
-                Text("Cambia password")
-            }
-
-
             // ==================================
-            // MESSAGGI
+            // MESSAGGI PASSWORD
             // ==================================
 
             if (passwordErrorMessage.isNotEmpty()) {
@@ -295,9 +281,9 @@ fun EditAccountForm(
                     text = passwordErrorMessage,
 
                     color =
-                        MaterialTheme
-                            .colorScheme
-                            .error,
+                    MaterialTheme
+                        .colorScheme
+                        .error,
 
                     fontSize = 14.sp
                 )
@@ -309,13 +295,40 @@ fun EditAccountForm(
                     text = passwordSuccessMessage,
 
                     color =
-                        MaterialTheme
-                            .colorScheme
-                            .primary,
+                    MaterialTheme
+                        .colorScheme
+                        .primary,
 
                     fontSize = 14.sp
                 )
             }
+
+            // BOTTONE CAMBIA PASSWORD
+
+            Button(
+
+                onClick = onChangePasswordClick,
+
+                modifier = Modifier.fillMaxWidth(),
+
+                enabled = !isSavingAccount && !isChangingPassword
+
+            ) {
+                if (isChangingPassword) {
+
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+
+                } else {
+
+                    Text("Cambia password")
+                }
+            }
+
+
+
 
             HorizontalDivider(
                 modifier = Modifier.padding(

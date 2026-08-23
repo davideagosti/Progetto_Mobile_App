@@ -2,17 +2,9 @@ package laboratorio.demo.progetto_mobile_app.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 
-import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
@@ -22,7 +14,6 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.CameraPositionState
 
 import android.location.Location
-import androidx.compose.foundation.layout.*
 
 @Composable
 fun MapSection(

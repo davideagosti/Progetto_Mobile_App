@@ -35,6 +35,9 @@ fun EditAccountPortrait(
 
     isLoading: Boolean,
 
+    isSavingAccount : Boolean,
+    isChangingPassword : Boolean,
+
     onNomeChange: (String) -> Unit,
     onCognomeChange: (String) -> Unit,
 
@@ -116,6 +119,9 @@ fun EditAccountPortrait(
 
             isLoading = isLoading,
 
+            isSavingAccount = isSavingAccount,
+            isChangingPassword = isChangingPassword,
+
             onNomeChange = onNomeChange,
 
             onCognomeChange = onCognomeChange,
@@ -164,6 +170,9 @@ fun EditAccountPortraitPreview() {
             passwordSuccessMessage = "",
 
             isLoading = false,
+
+            isSavingAccount = false,
+            isChangingPassword = false,
 
             onNomeChange = {},
             onCognomeChange = {},

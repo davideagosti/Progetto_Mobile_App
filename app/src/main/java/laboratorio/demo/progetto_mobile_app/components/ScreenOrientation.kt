@@ -6,6 +6,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 
 @Composable
 fun isLandscape(): Boolean {
-    return LocalConfiguration.current.orientation ==
+
+    val configuration = LocalConfiguration.current
+
+    return configuration.orientation ==
             Configuration.ORIENTATION_LANDSCAPE
 }

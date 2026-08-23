@@ -17,6 +17,9 @@ import laboratorio.demo.progetto_mobile_app.screens.login.LoginScreen
 import laboratorio.demo.progetto_mobile_app.screens.register.RegisterScreen
 import laboratorio.demo.progetto_mobile_app.screens.editaccount.EditAccountScreen
 
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
+
 @Composable
 fun AppNavigation(
     navController: NavHostController
@@ -139,7 +142,9 @@ fun AppNavigation(
 
         NavHost(
             navController = navController,
-            startDestination = Routes.Home.route
+            startDestination = Routes.Home.route,
+
+            modifier = Modifier.padding(innerPadding)
         ) {
 
             composable(Routes.Home.route) {
