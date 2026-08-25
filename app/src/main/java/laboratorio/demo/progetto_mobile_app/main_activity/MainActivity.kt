@@ -13,7 +13,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
+import com.google.android.libraries.places.api.Places
 
+import laboratorio.demo.progetto_mobile_app.BuildConfig
 import laboratorio.demo.progetto_mobile_app.navigation.AppNavigation
 import laboratorio.demo.progetto_mobile_app.screens.splash.SplashScreen
 import laboratorio.demo.progetto_mobile_app.ui.theme.Progetto_Mobile_AppTheme
@@ -23,6 +25,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
+
+        if (!Places.isInitialized()) {
+            Places.initializeWithNewPlacesApiEnabled(
+                applicationContext,
+                BuildConfig.MAPS_API_KEY
+            )
+        }
 
         setContent {
             Progetto_Mobile_AppTheme {

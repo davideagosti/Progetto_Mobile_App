@@ -1,47 +1,44 @@
 package laboratorio.demo.progetto_mobile_app.screens
 
-import androidx.compose.foundation.layout.*
+import android.location.Location
 
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
-
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.material3.MaterialTheme
 
-import laboratorio.demo.progetto_mobile_app.components.AccountMenu
-import laboratorio.demo.progetto_mobile_app.components.SearchBar
-import laboratorio.demo.progetto_mobile_app.components.MapSection
-import laboratorio.demo.progetto_mobile_app.components.MapControls
-import laboratorio.demo.progetto_mobile_app.utils.LocationManager
-import laboratorio.demo.progetto_mobile_app.utils.GeocoderManager
-import laboratorio.demo.progetto_mobile_app.components.LocationPermissionHandler
-
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.android.libraries.places.api.model.AutocompletePrediction
 
-import com.google.android.gms.maps.CameraUpdateFactory
-
-import android.location.Location
-import laboratorio.demo.progetto_mobile_app.components.CitySuggestions
+import laboratorio.demo.progetto_mobile_app.components.AccountMenu
+import laboratorio.demo.progetto_mobile_app.components.PlaceSuggestions
+import laboratorio.demo.progetto_mobile_app.components.LocationPermissionHandler
+import laboratorio.demo.progetto_mobile_app.components.MapSection
+import laboratorio.demo.progetto_mobile_app.components.SearchBar
+import laboratorio.demo.progetto_mobile_app.components.PlaceInfoCard
 import laboratorio.demo.progetto_mobile_app.components.cities
 
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import laboratorio.demo.progetto_mobile_app.utils.GeocoderManager
+import laboratorio.demo.progetto_mobile_app.utils.LocationManager
+import laboratorio.demo.progetto_mobile_app.utils.PlacesManager
+import laboratorio.demo.progetto_mobile_app.utils.PlaceInfo
 
 @Composable
 fun HomeScreen(
@@ -90,6 +87,14 @@ fun HomeScreen(
         GeocoderManager(context)
     }
 
+    val placesManager = remember {
+        PlacesManager(context)
+    }
+
+    var placeSuggestions by remember {
+        mutableStateOf(emptyList<AutocompletePrediction>())
+    }
+
     // Testo inserito nella barra di ricerca
     var searchText by remember {
         mutableStateOf("")
@@ -112,6 +117,10 @@ fun HomeScreen(
     // nessuna posizione.
     var searchedLocation by remember {
         mutableStateOf<LatLng?>(null)
+    }
+
+    var selectedPlace by remember {
+        mutableStateOf<PlaceInfo?>(null)
     }
 
     // ==========================================
@@ -169,15 +178,14 @@ fun HomeScreen(
     // spostiamo la telecamera sulla sua posizione.
     LaunchedEffect(searchedLocation) {
 
-        searchedLocation?.let { location ->
+        val location = searchedLocation ?: return@LaunchedEffect
 
-            cameraPositionState.animate(
-                update = CameraUpdateFactory.newLatLngZoom(
-                    location,
-                    13f
-                )
+        cameraPositionState.animate(
+            update = CameraUpdateFactory.newLatLngZoom(
+                location,
+                16f
             )
-        }
+        )
     }
 
     // ==========================================
@@ -218,9 +226,26 @@ fun HomeScreen(
 
                             searchText = text
 
+                            if (text.isNotBlank()) {
+
+                                // Mostra i suggerimenti quando l'utente
+                                // inizia a digitare.
+                                showSuggestions = true
+
+                                placesManager.getSuggestions(text) { suggestions ->
+
+                                    placeSuggestions = suggestions
+                                }
+
+                            } else {
+
+                                showSuggestions = false
+                                placeSuggestions = emptyList()
+                            }
+
                             // Mostra i suggerimenti quando l'utente
                             // inizia a digitare.
-                            showSuggestions = text.isNotBlank()
+                            // showSuggestions = text.isNotBlank()
                         },
 
                         onSearch = {
@@ -229,8 +254,10 @@ fun HomeScreen(
 
                             if (query.isNotBlank()) {
 
-                                val city = cities.firstOrNull{
-                                    it.name.equals(
+                                // Prima controlla le città predefinite.
+                                val city = cities.firstOrNull{ city ->
+
+                                    city.name.equals(
                                         query,
                                         ignoreCase = true
                                     )
@@ -238,6 +265,7 @@ fun HomeScreen(
 
                                 if (city != null) {
 
+                                    // Città trovata nella lista locale.
                                     searchText = city.name
 
                                     searchedLocation = LatLng(
@@ -245,25 +273,26 @@ fun HomeScreen(
                                         city.longitude
                                     )
 
+                                    // La città non ha una PlaceInfo dettagliata.
+                                    selectedPlace = null
+
                                     // Nasconde i suggerimenti.
                                     showSuggestions = false
 
-                                    // Rimuove il cursore dalla SearchBar.
+                                    // Rimuove il focus.
                                     focusManager.clearFocus()
 
                                     // Nasconde la tastiera.
                                     keyboardController?.hide()
 
                                 } else {
-                                    // Se non è una delle città
-                                    // predefinite, utilizza
-                                    // il Geocoder.
+                                    // Se non è una delle città predefinite,
+                                    // utilizza il Geocoder.
                                     geocoderManager.search(query) { location ->
 
                                         searchedLocation = location
 
                                         // Nasconde i suggerimenti
-                                        // dopo la ricerca.
                                         showSuggestions = false
 
                                         // Rimuove il focus.
@@ -274,37 +303,6 @@ fun HomeScreen(
                                     }
                                 }
                             }
-                            /*
-                            val city = cities.firstOrNull{
-                                it.name.equals(
-                                    searchText.trim(),
-                                    ignoreCase = true
-                                )
-                            }
-
-                            if (city != null){
-                                searchedLocation = LatLng(
-                                    city.latitude,
-                                    city.longitude
-                                )
-                            }*/
-
-                            /*
-                            // Evita di effettuare una ricerca vuota.
-                            if (searchText.isNotBlank()) {
-                                return@SearchBar
-                            }
-                            //val query = searchText.trim()
-
-                            // Deleghiamo la ricerca al GeocoderManager.
-                            geocoderManager.search(searchText) { location ->
-                                //geocoderManager.search(query) { location ->
-
-                                // Aggiorniamo la posizione trovata.
-                                // Se location è null, non è stato trovato alcun risultato.
-                                searchedLocation = location
-                            }*/
-                            //}
                         }
 
                     )
@@ -313,31 +311,43 @@ fun HomeScreen(
                     // SUGGERIMENTI
                     // =====================================
 
-                    if (showSuggestions) {
-                        CitySuggestions(
-                            query = searchText,
-                            onCitySelected = { city ->
+                    if (showSuggestions && placeSuggestions.isNotEmpty()) {
 
-                                // Inserisce il nome corretto
-                                // nella SearchBar.
-                                searchText = city.name
+                        PlaceSuggestions(
+                            suggestions = placeSuggestions,
 
-                                // Imposta la posizione selezionata.
-                                // Salva la posizione selezionata.
-                                searchedLocation = LatLng(
-                                    city.latitude,
-                                    city.longitude
-                                )
+                            onPlaceSelected = { prediction ->
 
-                                // Nasconde la tendina.
-                                showSuggestions = false
+                                // Mostra nella SearchBar il luogo selezionato.
+                                searchText = prediction.getPrimaryText(null).toString()
 
-                                // Toglie il focus dalla SearchBar.
-                                focusManager.clearFocus()
+                                // Recupera le coordinate del luogo da Google Places.
+                                placesManager.getPlaceLocation(prediction) { placeInfo ->
 
-                                // Nasconde la tastiera.
-                                keyboardController?.hide()
+                                    if (placeInfo != null) {
 
+                                        // Nome del luogo nella SearchBar.
+                                        searchText = placeInfo.name
+
+                                        // Salva tutte le informazioni del luogo.
+                                        selectedPlace = placeInfo
+
+                                        // Aggiorna la posizione utilizzata dalla mappa.
+                                        searchedLocation = placeInfo.location
+
+                                        // Nasconde i suggerimenti.
+                                        showSuggestions = false
+
+                                        // Svuota la lista dei suggerimenti.
+                                        placeSuggestions = emptyList()
+
+                                        // Rimuove il focus dalla SearchBar.
+                                        focusManager.clearFocus()
+
+                                        // Nasconde la tastiera.
+                                        keyboardController?.hide()
+                                    }
+                                }
                             }
                         )
                     }
@@ -350,6 +360,14 @@ fun HomeScreen(
 
                 // Account Menu
                 AccountMenu(navController)
+            }
+
+            // Info Card del luogo selezionato
+            selectedPlace?.let { place ->
+
+                PlaceInfoCard(
+                    place = place
+                )
             }
 
             // =========================
