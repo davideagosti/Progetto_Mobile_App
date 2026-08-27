@@ -340,6 +340,34 @@ fun AccountMenu( navController: NavController) {
                 )
             )
 
+            // ==================================
+            // PREFERITI
+            // ==================================
+
+            DropdownMenuItem(
+
+                leadingIcon = {
+
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = null
+                    )
+                },
+
+                text = {
+                    Text("Preferiti")
+                },
+
+                onClick = {
+
+                    menuOpen = false
+
+                    navController.navigate(
+                        Routes.Favorites.route
+                    )
+                }
+            )
+
             // Modifica dati account
             DropdownMenuItem(
 

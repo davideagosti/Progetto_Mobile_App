@@ -1,15 +1,21 @@
 package laboratorio.demo.progetto_mobile_app.screens
 
 import android.location.Location
+import kotlinx.coroutines.launch
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,6 +40,7 @@ import laboratorio.demo.progetto_mobile_app.components.MapSection
 import laboratorio.demo.progetto_mobile_app.components.SearchBar
 import laboratorio.demo.progetto_mobile_app.components.PlaceInfoCard
 import laboratorio.demo.progetto_mobile_app.components.cities
+import laboratorio.demo.progetto_mobile_app.utils.FavoritesManager
 
 import laboratorio.demo.progetto_mobile_app.utils.GeocoderManager
 import laboratorio.demo.progetto_mobile_app.utils.LocationManager
@@ -43,7 +50,17 @@ import laboratorio.demo.progetto_mobile_app.utils.PlaceInfo
 @Composable
 fun HomeScreen(
     navController: NavController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+
+    favoritePlaceId: String? = null,
+
+    favoritePlaceName: String? = null,
+
+    favoritePlaceAddress: String? = null,
+
+    favoriteLatitude: Double? = null,
+
+    favoriteLongitude: Double? = null
     ) {
 
     // ==========================================
@@ -91,6 +108,16 @@ fun HomeScreen(
         PlacesManager(context)
     }
 
+    val favoritesManager = remember {
+        FavoritesManager()
+    }
+
+    val snackbarHostState = remember {
+        SnackbarHostState()
+    }
+
+    val snackbarScope = rememberCoroutineScope()
+
     var placeSuggestions by remember {
         mutableStateOf(emptyList<AutocompletePrediction>())
     }
@@ -121,6 +148,10 @@ fun HomeScreen(
 
     var selectedPlace by remember {
         mutableStateOf<PlaceInfo?>(null)
+    }
+
+    var showPlaceInfoCard by remember {
+        mutableStateOf(false)
     }
 
     // ==========================================
@@ -156,17 +187,38 @@ fun HomeScreen(
     // Posizione iniziale della mappa: Bologna
     val bologna = LatLng(44.4949, 11.3426)
 
+    val initialLocation =
+        if (
+            favoriteLatitude != null &&
+            favoriteLongitude != null
+        ) {
+            LatLng(
+                favoriteLatitude,
+                favoriteLongitude
+            )
+        } else {
+            bologna
+        }
+
 
     // ==========================================
-    // STATO DELLA TELECAMERA
+    // STATO DELLA TELECAMERA MAPPA
     // ==========================================
 
     // Mantiene la posizione e lo zoom attuali
     // della Google Map.
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
-            bologna,
-            13f
+            initialLocation,
+
+            if (
+                favoriteLatitude != null &&
+                favoriteLongitude != null
+            ) {
+                16f
+            } else {
+                13f
+            }
         )
     }
 
@@ -186,6 +238,62 @@ fun HomeScreen(
                 16f
             )
         )
+    }
+
+    // ==========================================
+    // APERTURA DI UN PREFERITO
+    // ==========================================
+
+    LaunchedEffect(
+        favoritePlaceId,
+        favoritePlaceName,
+        favoritePlaceAddress,
+        favoriteLatitude,
+        favoriteLongitude
+    ) {
+
+        if (
+            favoritePlaceId != null &&
+            favoriteLatitude != null &&
+            favoriteLongitude != null
+        ) {
+
+            val location = LatLng(
+                favoriteLatitude,
+                favoriteLongitude
+            )
+
+            // Imposta la posizione sulla mappa
+            searchedLocation = location
+
+            // Crea le informazioni del luogo preferito
+            selectedPlace = PlaceInfo(
+                placeId = favoritePlaceId,
+
+                name = favoritePlaceName
+                    ?: "Luogo preferito",
+
+                address = favoritePlaceAddress
+                    ?: "Indirizzo non disponibile",
+
+                location = location
+            )
+
+            // Search Bar
+            searchText = favoritePlaceName ?: ""
+
+            // Mostra il nome nella SearchBar
+            //if (!favoritePlaceName.isNullOrBlank()) {
+
+                //searchText = favoritePlaceName
+
+                snackbarScope.launch {
+                    snackbarHostState.showSnackbar(
+                        "📍 ${favoritePlaceName ?: "Luogo preferito"}"
+                    )
+                }
+            //}
+        }
     }
 
     // ==========================================
@@ -335,6 +443,9 @@ fun HomeScreen(
                                         // Aggiorna la posizione utilizzata dalla mappa.
                                         searchedLocation = placeInfo.location
 
+                                        // Mostra InfoCard
+                                        showPlaceInfoCard = true
+
                                         // Nasconde i suggerimenti.
                                         showSuggestions = false
 
@@ -362,12 +473,28 @@ fun HomeScreen(
                 AccountMenu(navController)
             }
 
-            // Info Card del luogo selezionato
-            selectedPlace?.let { place ->
+            if (showPlaceInfoCard) {
+                // Info Card del luogo selezionato
+                selectedPlace?.let { place ->
 
-                PlaceInfoCard(
-                    place = place
-                )
+                    PlaceInfoCard(
+                        place = place,
+                        favoritesManager = favoritesManager,
+                        onMessage = { message ->
+
+                            snackbarScope.launch {
+                                snackbarHostState.showSnackbar(message)
+                            }
+                        },
+
+                        onClose = {
+
+                            //selectedPlace = null
+
+                            showPlaceInfoCard = false
+                        }
+                    )
+                }
             }
 
             // =========================
@@ -382,6 +509,8 @@ fun HomeScreen(
                 cameraPositionState = cameraPositionState,
 
                 searchedLocation = searchedLocation,
+
+                selectedPlace = selectedPlace,
 
                 searchText = searchText,
 
@@ -427,9 +556,58 @@ fun HomeScreen(
                                 }
                         }
                     }
+                },
+
+                // Funziona solo quando il
+                // marker corrisponde a un luogo selezionato da Places
+                onMarkerClick = { place ->
+
+                    //placesManager.getPlaceInfoFromLocation(markerPosition) { placeInfo ->
+
+                    //selectedPlace = place
+
+                    //if (selectedPlace != null) {
+
+                        selectedPlace = place
+                        showPlaceInfoCard = true
+
+
+                        snackbarScope.launch {
+                            snackbarHostState.showSnackbar(
+                                //"✅ CLICK MARKER FUNZIONANTE"
+                                "Marker cliccato: ${selectedPlace!!.name}"
+                            )
+                        }
+
+
+
+                        // Se abbiamo già le informazioni del luogo,
+                        // mostra direttamente la PlaceInfoCard.
+
+                        // if (selectedPlace != null) {
+
+                        //if (placeInfo != null) {
+
+                            //selectedPlace = placeInfo
+
+                            //showPlaceInfoCard = true
+                        //}
+
+                        // La card viene già mostrata
+                        // tramite selectedPlace.
+                        //}
+                    //}
                 }
             )
         }
+
+        // Messaggio
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        )
     }
 }
 

@@ -12,6 +12,7 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 
 data class PlaceInfo(
+    val placeId: String,
     val name: String,
     val address: String,
     val location: LatLng
@@ -89,6 +90,7 @@ class PlacesManager (
                 if (latLng != null) {
 
                     val placeInfo = PlaceInfo(
+                        placeId = placeId,
                         name = place.name ?: "Luogo",
                         address = place.address ?: "Indirizzo non disponibile",
                         location = latLng

@@ -16,8 +16,20 @@ sealed class Routes(
         showBottomBar = true,
     )
 
+//    object Home : Routes(
+//        route = "home",
+//        title = "",
+//        showTopBar = false,
+//        showBottomBar = false
+//    )
+
     object Home : Routes(
-        route = "home",
+        route = "home" +
+                "?placeId={placeId}" +
+                "&name={name}" +
+                "&address={address}" +
+                "&latitude={latitude}" +
+                "&longitude={longitude}",
         title = "",
         showTopBar = false,
         showBottomBar = false
@@ -40,6 +52,13 @@ sealed class Routes(
     object EditAccount : Routes(
         route = "edit_account",
         title = "Modifica account",
+        showTopBar = true,
+        showBottomBar = false
+    )
+
+    object Favorites : Routes(
+        route = "favorites",
+        title = "Gestisci preferiti",
         showTopBar = true,
         showBottomBar = false
     )

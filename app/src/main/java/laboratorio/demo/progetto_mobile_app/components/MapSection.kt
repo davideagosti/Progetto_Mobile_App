@@ -3,7 +3,9 @@ package laboratorio.demo.progetto_mobile_app.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -13,19 +15,24 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.CameraPositionState
 
+
 import android.location.Location
+
+import laboratorio.demo.progetto_mobile_app.utils.PlaceInfo
 
 @Composable
 fun MapSection(
     modifier: Modifier = Modifier,
     cameraPositionState: CameraPositionState,
     searchedLocation: LatLng?,
+    selectedPlace: PlaceInfo?,
     searchText: String,
     locationPermissionGranted: Boolean,
     currentLocation: Location?,
     onZoomIn: () -> Unit,
     onZoomOut: () -> Unit,
-    onMyLocationClick: () -> Unit
+    onMyLocationClick: () -> Unit,
+    onMarkerClick: (PlaceInfo) -> Unit
 ) {
     Box(
         modifier = modifier
@@ -56,7 +63,7 @@ fun MapSection(
                 compassEnabled = true,
 
                 // IMPORTANTE:
-                // disabilitiamo il pulsante posizione
+                // disabilita il pulsante posizione
                 // integrato di Google Maps
                 myLocationButtonEnabled = false
             ),
@@ -78,7 +85,21 @@ fun MapSection(
                         position = location
                     ),
 
-                    title = searchText
+                    //title = "TEST MARKER",
+                    title = searchText,
+
+                    onClick = {
+                            //onMarkerClick()
+
+                        selectedPlace?.let { place ->
+
+                            onMarkerClick(place)
+
+                        }
+
+                        // true = il click è stato gestito
+                        true
+                    }
                 )
             }
         }
@@ -95,7 +116,7 @@ fun MapSection(
             onMyLocation = onMyLocationClick,
 
             modifier = Modifier
-                .fillMaxSize()
+                .align(Alignment.BottomEnd)
         )
 
 

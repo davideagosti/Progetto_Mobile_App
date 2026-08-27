@@ -2,6 +2,10 @@ package laboratorio.demo.progetto_mobile_app.navigation
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+
 import androidx.navigation.compose.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
@@ -16,6 +20,7 @@ import laboratorio.demo.progetto_mobile_app.screens.HomeScreen
 import laboratorio.demo.progetto_mobile_app.screens.login.LoginScreen
 import laboratorio.demo.progetto_mobile_app.screens.register.RegisterScreen
 import laboratorio.demo.progetto_mobile_app.screens.editaccount.EditAccountScreen
+import laboratorio.demo.progetto_mobile_app.screens.FavoritesScreen
 
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
@@ -79,6 +84,12 @@ fun AppNavigation(
             showBottomBar = false
         )
 
+        Routes.Favorites.route -> ScreenConfig(
+            title = "Gestisci preferiti",
+            showTopBar = true,
+            showBottomBar = false
+        )
+
         else -> ScreenConfig(
             title = "",
             showTopBar = false,
@@ -99,6 +110,9 @@ fun AppNavigation(
             GreenAppBar()
 
         Routes.EditAccount.route ->
+            GreenAppBar()
+
+        Routes.Favorites.route ->
             GreenAppBar()
 
         else ->
@@ -147,8 +161,87 @@ fun AppNavigation(
             modifier = Modifier.padding(innerPadding)
         ) {
 
-            composable(Routes.Home.route) {
-                HomeScreen(navController)
+//            composable(Routes.Home.route) {
+//                HomeScreen(navController)
+//            }
+
+            composable(
+
+                route = Routes.Home.route,
+
+                arguments = listOf(
+
+                    navArgument("placeId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+
+                    navArgument("name") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+
+                    navArgument("address") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+
+                    navArgument("latitude") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+
+                    navArgument("longitude") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
+
+                // ==========================================
+                // RECUPERO PARAMETRI DALLA NAVIGATION
+                // ==========================================
+
+                val placeId =
+                    backStackEntry.arguments
+                        ?.getString("placeId")
+
+                val name =
+                    backStackEntry.arguments
+                        ?.getString("name")
+
+                val address =
+                    backStackEntry.arguments
+                        ?.getString("address")
+
+                val latitude =
+                    backStackEntry.arguments
+                        ?.getString("latitude")
+                        ?.toDoubleOrNull()
+
+                val longitude =
+                    backStackEntry.arguments
+                        ?.getString("longitude")
+                        ?.toDoubleOrNull()
+
+                HomeScreen(
+                    navController = navController,
+
+                    favoritePlaceId = placeId,
+
+                    favoritePlaceName = name,
+
+                    favoritePlaceAddress = address,
+
+                    favoriteLatitude = latitude,
+
+                    favoriteLongitude = longitude
+                )
             }
 
             composable(Routes.Register.route) {
@@ -161,6 +254,10 @@ fun AppNavigation(
 
             composable(Routes.EditAccount.route) {
                 EditAccountScreen(navController)
+            }
+
+            composable(Routes.Favorites.route) {
+                FavoritesScreen(navController)
             }
         }
     }
