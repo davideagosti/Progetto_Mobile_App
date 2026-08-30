@@ -22,7 +22,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import laboratorio.demo.progetto_mobile_app.R
 import androidx.navigation.NavController
 import laboratorio.demo.progetto_mobile_app.navigation.Routes
-import androidx.compose.material3.Divider
 import androidx.navigation.compose.rememberNavController
 
 import com.google.firebase.auth.FirebaseAuth
@@ -317,7 +316,7 @@ fun AccountMenu( navController: NavController) {
             }
 
             // Separatore tra accesso e gestione account
-            Divider(
+            HorizontalDivider(
                 thickness = 2.dp,
                 color = Color.LightGray,
                 modifier = Modifier.padding(
@@ -421,7 +420,7 @@ fun AccountMenu( navController: NavController) {
 
 
 
-            Divider(
+            HorizontalDivider(
                 thickness = 2.dp,
                 color = Color.LightGray,
                 modifier = Modifier.padding(

@@ -41,6 +41,7 @@ import laboratorio.demo.progetto_mobile_app.components.SearchBar
 import laboratorio.demo.progetto_mobile_app.components.PlaceInfoCard
 import laboratorio.demo.progetto_mobile_app.components.cities
 import laboratorio.demo.progetto_mobile_app.utils.FavoritesManager
+import laboratorio.demo.progetto_mobile_app.utils.RouteManager
 
 import laboratorio.demo.progetto_mobile_app.utils.GeocoderManager
 import laboratorio.demo.progetto_mobile_app.utils.LocationManager
@@ -184,8 +185,29 @@ fun HomeScreen(
     // POSIZIONE INIZIALE DELLA MAPPA
     // ==========================================
 
+    val routeManager = remember {
+        RouteManager(context)
+    }
+
+    var routePoints by remember {
+        mutableStateOf<List<LatLng>>(emptyList())
+    }
+
+    val useTestLocation = false
+
+    //    var useTestLocation by remember {
+    //        mutableStateOf(true)
+    //    }
+
     // Posizione iniziale della mappa: Bologna
-    val bologna = LatLng(44.4949, 11.3426)
+    //val bologna = LatLng(44.4949, 11.3426)
+
+    // Posizione predefinito Test
+    val defaultLocation = LatLng(
+        44.16452,   // latitudine indicativa di Cesena
+        12.21926    // longitudine indicativa di Cesena
+    )
+
 
     val initialLocation =
         if (
@@ -197,7 +219,8 @@ fun HomeScreen(
                 favoriteLongitude
             )
         } else {
-            bologna
+            //bologna
+            defaultLocation
         }
 
 
@@ -283,16 +306,114 @@ fun HomeScreen(
             searchText = favoritePlaceName ?: ""
 
             // Mostra il nome nella SearchBar
-            //if (!favoritePlaceName.isNullOrBlank()) {
 
-                //searchText = favoritePlaceName
+            snackbarScope.launch {
+                snackbarHostState.showSnackbar(
+                    "📍 ${favoritePlaceName ?: "Luogo preferito"}"
+                )
+            }
 
-                snackbarScope.launch {
-                    snackbarHostState.showSnackbar(
-                        "📍 ${favoritePlaceName ?: "Luogo preferito"}"
-                    )
-                }
-            //}
+        }
+    }
+
+    // ==========================================
+// CALCOLO DEL PERCORSO
+// ==========================================
+
+    LaunchedEffect(
+        currentLocation,
+        selectedPlace,
+        useTestLocation
+    ) {
+
+        // Destinazione
+        val destination = selectedPlace?.location
+            ?: return@LaunchedEffect
+
+        // Posizione di partenza
+        val origin : LatLng
+
+        if (useTestLocation) {
+
+            // ======================================
+            // MODALITÀ TEST
+            // ======================================
+
+            origin = defaultLocation
+
+            println(
+                "📍 Modalità TEST"
+            )
+
+            println(
+                "Partenza: Via dell'Arrigoni 260"
+            )
+
+        } else {
+
+            // ======================================
+            // MODALITÀ GPS REALE
+            // ======================================
+
+            val location = currentLocation
+                ?: return@LaunchedEffect
+
+            origin = LatLng(
+                location.latitude,
+                location.longitude
+            )
+
+            println(
+                "📍 Modalità GPS REALE"
+            )
+
+            println(
+                "Posizione: " +
+                        "${location.latitude}, " +
+                        "${location.longitude}"
+            )
+        }
+
+
+        // ------------------------------------------
+        // CALCOLO ROUTE
+        // ------------------------------------------
+
+        val result = routeManager.calculateRoute(
+            origin = origin,
+            destination = destination
+        )
+
+
+        // ------------------------------------------
+        // RISULTATO
+        // ------------------------------------------
+
+        if (result != null) {
+
+            routePoints = result.points
+
+            println(
+                "✅ Percorso trovato"
+            )
+
+            println(
+                "📏 Distanza: " +
+                        "${result.distanceMeters} metri"
+            )
+
+            println(
+                "⏱ Durata: " +
+                        "${result.durationSeconds} secondi"
+            )
+
+        } else {
+
+            routePoints = emptyList()
+
+            println(
+                "❌ Impossibile calcolare il percorso"
+            )
         }
     }
 
@@ -518,6 +639,12 @@ fun HomeScreen(
 
                 currentLocation = currentLocation,
 
+                routePoints = routePoints,
+
+                useTestLocation = useTestLocation,
+
+                defaultLocation = defaultLocation,
+
                 onZoomIn = {
                     cameraPositionState.move(
                         CameraUpdateFactory.zoomIn()
@@ -562,41 +689,16 @@ fun HomeScreen(
                 // marker corrisponde a un luogo selezionato da Places
                 onMarkerClick = { place ->
 
-                    //placesManager.getPlaceInfoFromLocation(markerPosition) { placeInfo ->
-
-                    //selectedPlace = place
-
-                    //if (selectedPlace != null) {
-
-                        selectedPlace = place
-                        showPlaceInfoCard = true
+                    selectedPlace = place
+                    showPlaceInfoCard = true
 
 
-                        snackbarScope.launch {
-                            snackbarHostState.showSnackbar(
-                                //"✅ CLICK MARKER FUNZIONANTE"
-                                "Marker cliccato: ${selectedPlace!!.name}"
-                            )
-                        }
+                    snackbarScope.launch {
+                        snackbarHostState.showSnackbar(
 
-
-
-                        // Se abbiamo già le informazioni del luogo,
-                        // mostra direttamente la PlaceInfoCard.
-
-                        // if (selectedPlace != null) {
-
-                        //if (placeInfo != null) {
-
-                            //selectedPlace = placeInfo
-
-                            //showPlaceInfoCard = true
-                        //}
-
-                        // La card viene già mostrata
-                        // tramite selectedPlace.
-                        //}
-                    //}
+                            "Marker cliccato: ${selectedPlace!!.name}"
+                        )
+                    }
                 }
             )
         }

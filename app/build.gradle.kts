@@ -62,6 +62,20 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+
+        // Debug Kotlin per evitare che risulta nella build la versione 2.3.10 invece di quella effettiva 2.1.0
+        force("org.jetbrains.kotlin:kotlin-stdlib:2.1.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0")
+
+        // Debug AndroidX Core per evitare che la dipendenza lo porta a 1.17.0 invece di 1.13.1
+        force("androidx.core:core:1.13.1")
+        force("androidx.core:core-ktx:1.13.1")
+    }
+}
+
 dependencies {
 
     implementation("androidx.core:core-ktx:1.13.1")
@@ -86,6 +100,13 @@ dependencies {
     // Google Places
     implementation("com.google.android.libraries.places:places:4.3.1")
     implementation("com.google.android.material:material:1.12.0")
+
+    // Google Routes API
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+    // Google Maps Utility Library
+    implementation("com.google.maps.android:android-maps-utils:3.20.1")
 
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")

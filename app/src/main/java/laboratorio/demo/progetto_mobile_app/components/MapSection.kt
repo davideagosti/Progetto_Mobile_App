@@ -12,6 +12,7 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.CameraPositionState
 
@@ -29,6 +30,11 @@ fun MapSection(
     searchText: String,
     locationPermissionGranted: Boolean,
     currentLocation: Location?,
+    routePoints: List<LatLng>,
+
+    useTestLocation: Boolean,
+    defaultLocation: LatLng,
+
     onZoomIn: () -> Unit,
     onZoomOut: () -> Unit,
     onMyLocationClick: () -> Unit,
@@ -36,8 +42,6 @@ fun MapSection(
 ) {
     Box(
         modifier = modifier
-//            .fillMaxWidth()
-//            .weight(1f)
     ) {
 
         // =========================
@@ -74,6 +78,32 @@ fun MapSection(
         ) {
 
             // ==========================================
+            // PERCORSO
+            // ==========================================
+
+            if (routePoints.isNotEmpty()) {
+
+                Polyline(
+                    points = routePoints,
+                    width = 10f
+                )
+            }
+
+            // ==========================================
+            // MARKER POSIZIONE DI TEST
+            // ==========================================
+
+            if (useTestLocation) {
+
+                Marker(
+                    state = MarkerState(
+                        position = defaultLocation
+                    ),
+                    title = "Posizione di test"
+                )
+            }
+
+            // ==========================================
             // MARKER DELLA RICERCA
             // ==========================================
 
@@ -85,16 +115,13 @@ fun MapSection(
                         position = location
                     ),
 
-                    //title = "TEST MARKER",
                     title = searchText,
 
                     onClick = {
-                            //onMarkerClick()
 
                         selectedPlace?.let { place ->
 
                             onMarkerClick(place)
-
                         }
 
                         // true = il click è stato gestito
