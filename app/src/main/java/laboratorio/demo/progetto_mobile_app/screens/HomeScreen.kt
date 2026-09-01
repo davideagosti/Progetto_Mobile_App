@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
 
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.Composable
@@ -47,6 +50,8 @@ import laboratorio.demo.progetto_mobile_app.utils.GeocoderManager
 import laboratorio.demo.progetto_mobile_app.utils.LocationManager
 import laboratorio.demo.progetto_mobile_app.utils.PlacesManager
 import laboratorio.demo.progetto_mobile_app.utils.PlaceInfo
+
+import laboratorio.demo.progetto_mobile_app.ui.theme.*
 
 @Composable
 fun HomeScreen(
@@ -147,6 +152,38 @@ fun HomeScreen(
         mutableStateOf<LatLng?>(null)
     }
 
+    var routeOrigin by remember {
+        mutableStateOf<LatLng?>(null)
+    }
+
+    var routeDestination by remember {
+        mutableStateOf<LatLng?>(null)
+    }
+
+    var routeOriginText by remember {
+        mutableStateOf("La mia posizione")
+    }
+
+    var routeDestinationText by remember {
+        mutableStateOf("")
+    }
+
+    var routeSearchMode by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    var searchingOrigin by remember {
+        mutableStateOf(false)
+    }
+
+    var isRouteMode by remember {
+        mutableStateOf(false)
+    }
+
+    var isRouteConfirmed by remember {
+        mutableStateOf(false)
+    }
+
     var selectedPlace by remember {
         mutableStateOf<PlaceInfo?>(null)
     }
@@ -177,6 +214,54 @@ fun HomeScreen(
             locationManager.getLastLocation { location ->
 
                 currentLocation = location
+            }
+        }
+    }
+
+    // ==========================================
+    // IMPOSTA POSIZIONE GPS COME PARTENZA
+    // ==========================================
+
+    fun useCurrentLocationAsOrigin() {
+
+        if (!locationPermissionGranted) {
+
+            snackbarScope.launch {
+                snackbarHostState.showSnackbar(
+                    "Permesso di localizzazione non disponibile"
+                )
+            }
+
+            return
+        }
+
+        locationManager.getLastLocation { location ->
+
+            if (location != null) {
+
+                currentLocation = location
+
+                routeOrigin = LatLng(
+                    location.latitude,
+                    location.longitude
+                )
+
+                //routeOriginText = "La mia posizione"
+
+                /*
+                snackbarScope.launch {
+                    snackbarHostState.showSnackbar(
+                        "📍 Posizione attuale impostata come partenza"
+                    )
+                }*/
+
+            } else {
+
+                snackbarScope.launch {
+                    snackbarHostState.showSnackbar(
+                        "Impossibile recuperare la posizione attuale"
+                    )
+                }
             }
         }
     }
@@ -317,9 +402,79 @@ fun HomeScreen(
     }
 
     // ==========================================
-// CALCOLO DEL PERCORSO
-// ==========================================
+    // CALCOLO DEL PERCORSO
+    // ==========================================
 
+    LaunchedEffect(
+        routeOrigin,
+        routeDestination,
+        isRouteConfirmed
+    ) {
+
+        if (!isRouteConfirmed) {
+            return@LaunchedEffect
+        }
+
+        val origin = routeOrigin
+            ?: return@LaunchedEffect
+
+        val destination = routeDestination
+            ?: return@LaunchedEffect
+
+        println("🗺 Calcolo percorso")
+
+        println(
+            "Partenza: " +
+                    "${origin.latitude}, ${origin.longitude}"
+        )
+
+        println(
+            "Destinazione: " +
+                    "${destination.latitude}, ${destination.longitude}"
+        )
+
+        // ==========================================
+        // CALCOLO ROUTE
+        // ==========================================
+
+        val result = routeManager.calculateRoute(
+            origin = origin,
+            destination = destination
+        )
+
+        // ==========================================
+        // RISULTATO
+        // ==========================================
+
+        if (result != null) {
+
+            routePoints = result.points
+
+            println("✅ Percorso trovato")
+
+            println(
+                "📏 Distanza: " +
+                        "${result.distanceMeters} metri"
+            )
+
+            println(
+                "⏱ Durata: " +
+                        "${result.durationSeconds} secondi"
+            )
+
+        } else {
+
+            routePoints = emptyList()
+
+            snackbarScope.launch {
+                snackbarHostState.showSnackbar(
+                    "❌ Impossibile calcolare il percorso"
+                )
+            }
+        }
+    }
+
+/*
     LaunchedEffect(
         currentLocation,
         selectedPlace,
@@ -415,7 +570,7 @@ fun HomeScreen(
                 "❌ Impossibile calcolare il percorso"
             )
         }
-    }
+    }*/
 
     // ==========================================
     // BOX PRINCIPALE (INTERFACCIA)
@@ -447,81 +602,66 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f)
                 ) {
 
-                    // Barra ricerca
-                    SearchBar(
-                        modifier = Modifier.fillMaxWidth(),
-                        searchText = searchText,
-                        onSearchTextChange = { text ->
+                    if (!isRouteMode) {
+                        // Barra ricerca
+                        SearchBar(
+                            modifier = Modifier.fillMaxWidth(),
+                            searchText = searchText,
+                            onSearchTextChange = { text ->
 
-                            searchText = text
+                                searchText = text
 
-                            if (text.isNotBlank()) {
+                                if (text.isNotBlank()) {
+
+                                    // Mostra i suggerimenti quando l'utente
+                                    // inizia a digitare.
+                                    showSuggestions = true
+
+                                    placesManager.getSuggestions(text) { suggestions ->
+
+                                        placeSuggestions = suggestions
+                                    }
+
+                                } else {
+
+                                    showSuggestions = false
+                                    placeSuggestions = emptyList()
+                                }
 
                                 // Mostra i suggerimenti quando l'utente
                                 // inizia a digitare.
-                                showSuggestions = true
+                                // showSuggestions = text.isNotBlank()
+                            },
 
-                                placesManager.getSuggestions(text) { suggestions ->
+                            onSearch = {
 
-                                    placeSuggestions = suggestions
-                                }
+                                val query = searchText.trim()
 
-                            } else {
+                                if (query.isNotBlank()) {
 
-                                showSuggestions = false
-                                placeSuggestions = emptyList()
-                            }
+                                    // Prima controlla le città predefinite.
+                                    val city = cities.firstOrNull { city ->
 
-                            // Mostra i suggerimenti quando l'utente
-                            // inizia a digitare.
-                            // showSuggestions = text.isNotBlank()
-                        },
+                                        city.name.equals(
+                                            query,
+                                            ignoreCase = true
+                                        )
+                                    }
 
-                        onSearch = {
+                                    if (city != null) {
 
-                            val query = searchText.trim()
+                                        // Città trovata nella lista locale.
+                                        searchText = city.name
 
-                            if (query.isNotBlank()) {
+                                        searchedLocation = LatLng(
+                                            city.latitude,
+                                            city.longitude
+                                        )
 
-                                // Prima controlla le città predefinite.
-                                val city = cities.firstOrNull{ city ->
+                                        // La città non ha una PlaceInfo dettagliata.
+                                        selectedPlace = null
 
-                                    city.name.equals(
-                                        query,
-                                        ignoreCase = true
-                                    )
-                                }
-
-                                if (city != null) {
-
-                                    // Città trovata nella lista locale.
-                                    searchText = city.name
-
-                                    searchedLocation = LatLng(
-                                        city.latitude,
-                                        city.longitude
-                                    )
-
-                                    // La città non ha una PlaceInfo dettagliata.
-                                    selectedPlace = null
-
-                                    // Nasconde i suggerimenti.
-                                    showSuggestions = false
-
-                                    // Rimuove il focus.
-                                    focusManager.clearFocus()
-
-                                    // Nasconde la tastiera.
-                                    keyboardController?.hide()
-
-                                } else {
-                                    // Se non è una delle città predefinite,
-                                    // utilizza il Geocoder.
-                                    geocoderManager.search(query) { location ->
-
-                                        searchedLocation = location
-
-                                        // Nasconde i suggerimenti
+                                        // Nasconde i suggerimenti.
                                         showSuggestions = false
 
                                         // Rimuove il focus.
@@ -529,12 +669,189 @@ fun HomeScreen(
 
                                         // Nasconde la tastiera.
                                         keyboardController?.hide()
+
+                                    } else {
+                                        // Se non è una delle città predefinite,
+                                        // utilizza il Geocoder.
+                                        geocoderManager.search(query) { location ->
+
+                                            searchedLocation = location
+
+                                            // Nasconde i suggerimenti
+                                            showSuggestions = false
+
+                                            // Rimuove il focus.
+                                            focusManager.clearFocus()
+
+                                            // Nasconde la tastiera.
+                                            keyboardController?.hide()
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                    )
+                        )
+                    }
+
+                    if (isRouteMode) {
+
+                        // ==========================================
+                        // PARTENZA
+                        // ==========================================
+
+                        SearchBar(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+
+                            searchText = routeOriginText,
+
+                            placeholderText = "La mia posizione",
+
+                            onSearchTextChange = { text ->
+
+                                routeOriginText = text
+
+                                // Indica che stiamo cercando la partenza
+                                routeSearchMode = "origin"
+
+                                if (text.isNotBlank() //&&
+                                    //text != "La mia posizione"
+                                ) {
+
+                                    placesManager.getSuggestions(text) { suggestions ->
+
+                                        placeSuggestions = suggestions
+                                        showSuggestions = true
+                                    }
+
+                                } else {
+
+                                    showSuggestions = false
+                                    placeSuggestions = emptyList()
+                                }
+                            },
+
+                            onSearch = {
+
+                                val query = routeOriginText.trim()
+
+                                if (query.isNotBlank() //&&
+                                    //query != "La mia posizione"
+                                ) {
+
+                                    geocoderManager.search(query) { location ->
+
+                                        if (location != null) {
+
+                                            routeOrigin = location
+                                        }
+                                    }
+                                }
+                            }
+                        )
+
+                        Spacer(
+                            modifier = Modifier.height(8.dp)
+                        )
+
+                        // ==========================================
+                        // DESTINAZIONE
+                        // ==========================================
+
+                        SearchBar(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+
+                            searchText = routeDestinationText,
+
+                            placeholderText = "Inserisci destinazione",
+
+                            onSearchTextChange = { text ->
+
+                                routeDestinationText = text
+
+                                // Indica che stiamo cercando la destinazione
+                                routeSearchMode = "destination"
+
+                                if (text.isNotBlank()) {
+
+                                    placesManager.getSuggestions(text) { suggestions ->
+
+                                        placeSuggestions = suggestions
+                                        showSuggestions = true
+                                    }
+
+                                } else {
+
+                                    showSuggestions = false
+                                    placeSuggestions = emptyList()
+                                }
+                            },
+
+                            onSearch = {
+
+                                val query = routeDestinationText.trim()
+
+                                if (query.isNotBlank()) {
+
+                                    geocoderManager.search(query) { location ->
+
+                                        if (location != null) {
+
+                                            routeDestination = location
+                                        }
+                                    }
+                                }
+                            }
+                        )
+
+                        Spacer(
+                            modifier = Modifier.height(8.dp)
+                        )
+
+                        // ==========================================
+                        // CONFERMA PERCORSO
+                        // ==========================================
+
+                        Button(
+                            onClick = {
+
+                                if (
+                                    routeOrigin != null &&
+                                    routeDestination != null
+                                ) {
+
+                                    // Permette al LaunchedEffect
+                                    // di calcolare il percorso
+                                    isRouteConfirmed = true
+
+                                    snackbarScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            "🗺 Calcolo del percorso..."
+                                        )
+                                    }
+
+                                } else {
+
+                                    snackbarScope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            "Inserisci partenza e destinazione"
+                                        )
+                                    }
+                                }
+                            },
+
+                            modifier = Modifier.fillMaxWidth(),
+
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = lightBlue
+                            )
+                        ) {
+
+                            Text("Conferma percorso")
+                        }
+                    }
 
                     // =====================================
                     // SUGGERIMENTI
@@ -547,6 +864,58 @@ fun HomeScreen(
 
                             onPlaceSelected = { prediction ->
 
+                                placesManager.getPlaceLocation(prediction) { placeInfo ->
+
+                                    if (placeInfo != null) {
+
+                                        // =====================================
+                                        // RICERCA PARTENZA
+                                        // =====================================
+
+                                        if (routeSearchMode == "origin") {
+
+                                            routeOriginText = placeInfo.name
+                                            routeOrigin = placeInfo.location
+
+                                        }
+
+                                        // =====================================
+                                        // RICERCA DESTINAZIONE
+                                        // =====================================
+
+                                        else if (routeSearchMode == "destination") {
+
+                                            routeDestinationText = placeInfo.name
+                                            routeDestination = placeInfo.location
+
+                                        }
+
+                                        // =====================================
+                                        // RICERCA NORMALE
+                                        // =====================================
+
+                                        else {
+
+                                            searchText = placeInfo.name
+                                            selectedPlace = placeInfo
+                                            searchedLocation = placeInfo.location
+
+                                            showPlaceInfoCard = true
+                                        }
+
+                                        // Nasconde suggerimenti
+                                        showSuggestions = false
+                                        placeSuggestions = emptyList()
+
+                                        // Rimuove focus
+                                        focusManager.clearFocus()
+
+                                        // Nasconde tastiera
+                                        keyboardController?.hide()
+                                    }
+                                }
+
+                                /*
                                 // Mostra nella SearchBar il luogo selezionato.
                                 searchText = prediction.getPrimaryText(null).toString()
 
@@ -579,7 +948,7 @@ fun HomeScreen(
                                         // Nasconde la tastiera.
                                         keyboardController?.hide()
                                     }
-                                }
+                                }*/
                             }
                         )
                     }
@@ -592,6 +961,84 @@ fun HomeScreen(
 
                 // Account Menu
                 AccountMenu(navController)
+            }
+
+            Button(
+                onClick = {
+                    isRouteMode = !isRouteMode
+                    if (isRouteMode) {
+
+                        // ==========================================
+                        // APERTURA MODALITÀ PERCORSO
+                        // ==========================================
+
+                        routeSearchMode = "origin"
+
+                        routeOriginText = ""
+                        routeDestinationText = ""
+
+                        routeDestination = null
+                        routePoints = emptyList()
+
+                        // Prova a usare la posizione GPS
+                        useCurrentLocationAsOrigin()
+
+                        /*
+                        // Quando apro la modalità percorso,
+                        // provo a utilizzare la posizione GPS
+                        // come partenza.
+
+                        useCurrentLocationAsOrigin()
+
+                        routeOriginText = "La mia posizione"
+                        routeDestinationText = ""
+
+                        routeDestination = null
+                        routePoints = emptyList()
+                        */
+                    } else {
+
+                        // ==========================================
+                        // CHIUSURA MODALITÀ PERCORSO
+                        // ==========================================
+
+                        routeOrigin = null
+                        routeDestination = null
+
+                        routeOriginText = ""
+                        routeDestinationText = ""
+
+                        routePoints = emptyList()
+
+                        routeSearchMode = null
+                        isRouteConfirmed = false
+
+                        /*
+                        // Quando chiudo la modalità percorso
+                        // pulisco il percorso.
+
+                        routeOrigin = null
+                        routeDestination = null
+                        routePoints = emptyList()
+
+                        routeSearchMode = null*/
+                    }
+                },
+
+                modifier = Modifier.fillMaxWidth(),
+
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = lightBlue
+                )
+            //)
+
+            ) {
+                Text(
+                    if (isRouteMode)
+                        "Chiudi percorso"
+                    else
+                        "Crea percorso"
+                )
             }
 
             if (showPlaceInfoCard) {

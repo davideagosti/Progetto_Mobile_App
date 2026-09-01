@@ -7,12 +7,11 @@ import android.location.Location
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.MainScope
 
-class LocationManager (
+class LocationManager(
     private val context: Context
 ) {
-    private val fusedLocationClient : FusedLocationProviderClient =
+    private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
     /**
@@ -53,7 +52,7 @@ class LocationManager (
             fusedLocationClient.lastLocation
                 .addOnSuccessListener { location ->
 
-                    // Restituiamo la posizione trovata.
+                    // Restituisce la posizione trovata.
                     onLocationReceived(location)
                 }
                 .addOnFailureListener {

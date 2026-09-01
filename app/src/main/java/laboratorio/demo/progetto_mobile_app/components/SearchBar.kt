@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 fun SearchBar(
     modifier: Modifier = Modifier,
     searchText: String,
+    placeholderText: String = "Cerca un luogo",
     onSearchTextChange: (String) -> Unit,
     onSearch: () -> Unit
 ) {
@@ -29,13 +30,20 @@ fun SearchBar(
 
         modifier = modifier,
 
+        // Text Box dove fare la ricerca posto
         placeholder = {
             Text(
-                "Cerca luogo o destinazione..."
+                text = placeholderText,
+                color = MaterialTheme.colorScheme.onSurface.copy(
+                    alpha = 0.5f
+                )
             )
+//            Text(
+//                "Cerca luogo o destinazione..."
+//            )
         },
 
-
+        // Icona
         leadingIcon = {
 
             Icon(
@@ -44,7 +52,6 @@ fun SearchBar(
             )
 
         },
-
 
         shape = RoundedCornerShape(50.dp),
 
