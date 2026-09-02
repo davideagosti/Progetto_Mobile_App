@@ -1,6 +1,5 @@
 package laboratorio.demo.progetto_mobile_app.screens
 
-import android.location.Location
 import kotlinx.coroutines.launch
 
 import androidx.compose.foundation.layout.*
@@ -52,15 +51,15 @@ import laboratorio.demo.progetto_mobile_app.utils.PlaceInfo
 
 import laboratorio.demo.progetto_mobile_app.model.RouteState
 import laboratorio.demo.progetto_mobile_app.model.RouteSearchMode
-import laboratorio.demo.progetto_mobile_app.model.SearchState
-import laboratorio.demo.progetto_mobile_app.model.HomeUiState
+
+import androidx.lifecycle.viewmodel.compose.viewModel
+import laboratorio.demo.progetto_mobile_app.viewmodel.HomeViewModel
 
 import laboratorio.demo.progetto_mobile_app.ui.theme.*
 
 @Composable
 fun HomeScreen(
     navController: NavController,
-    modifier: Modifier = Modifier,
 
     favoritePlaceId: String? = null,
 
@@ -89,13 +88,16 @@ fun HomeScreen(
         LocationManager(context)
     }
 
+    val viewModel: HomeViewModel = viewModel()
+
+    val homeUiState = viewModel.homeUiState
+    val searchState = viewModel.searchState
+
     // Indica se l'utente ha concesso almeno
     // uno dei permessi di localizzazione.
-    var homeUiState by remember {
-        mutableStateOf(
-            HomeUiState(
-                locationPermissionGranted = locationManager.hasLocationPermission()
-            )
+    LaunchedEffect(Unit) {
+        viewModel.setLocationPermissionGranted(
+            locationManager.hasLocationPermission()
         )
     }
 
@@ -103,9 +105,7 @@ fun HomeScreen(
     LocationPermissionHandler(
         locationPermissionGranted = homeUiState.locationPermissionGranted,
         onPermissionResult = { granted ->
-            homeUiState = homeUiState.copy(
-                locationPermissionGranted = granted
-            )
+            viewModel.setLocationPermissionGranted(granted)
         }
     )
 
@@ -132,10 +132,6 @@ fun HomeScreen(
 
     val snackbarScope = rememberCoroutineScope()
 
-    var searchState by remember {
-        mutableStateOf(SearchState())
-    }
-
     // Gestisce il focus della SearchBar.
     val focusManager = LocalFocusManager.current
 
@@ -152,15 +148,6 @@ fun HomeScreen(
     }
 
     // ==========================================
-    // POSIZIONE ATTUALE
-    // ==========================================
-
-    // Ultima posizione conosciuta dell'utente.
-    var currentLocation by remember {
-        mutableStateOf<Location?>(null)
-    }
-
-    // ==========================================
     // RECUPERO POSIZIONE INIZIALE
     // ==========================================
 
@@ -172,9 +159,7 @@ fun HomeScreen(
 
             locationManager.getLastLocation { location ->
 
-                homeUiState = homeUiState.copy(
-                    currentLocation = location
-                )
+                viewModel.setCurrentLocation(location)
             }
         }
     }
@@ -200,9 +185,7 @@ fun HomeScreen(
 
             if (location != null) {
 
-                homeUiState = homeUiState.copy(
-                    currentLocation = location
-                )
+                viewModel.setCurrentLocation(location)
 
                 routeState = routeState.copy(
                     origin = LatLng(
@@ -325,13 +308,11 @@ fun HomeScreen(
             )
 
             // Imposta la posizione sulla mappa
-            searchState = searchState.copy(
-                location = location
-            )
+            viewModel.setSearchLocation(location)
 
             // Crea le informazioni del luogo preferito
-            homeUiState = homeUiState.copy(
-                selectedPlace = PlaceInfo(
+            viewModel.selectPlace(
+                PlaceInfo(
                     placeId = favoritePlaceId,
 
                     name = favoritePlaceName
@@ -345,8 +326,8 @@ fun HomeScreen(
             )
 
             // Search Bar
-            searchState = searchState.copy(
-            text = favoritePlaceName ?: ""
+            viewModel.updateSearchText(
+                favoritePlaceName ?: ""
             )
 
             // Mostra il nome nella SearchBar
@@ -412,6 +393,7 @@ fun HomeScreen(
             )
 
             println("✅ Percorso trovato")
+            println("📍 Numero punti percorso: ${result.points.size}")
 
             println(
                 "📏 Distanza: " +
@@ -473,37 +455,21 @@ fun HomeScreen(
                             searchText = searchState.text,
                             onSearchTextChange = { text ->
 
-                                searchState = searchState.copy(
-                                    text = text,
-                                    showSuggestions = text.isNotBlank()
-                                )
+                                viewModel.updateSearchText(text)
 
                                 if (text.isNotBlank()) {
 
                                     // Mostra i suggerimenti quando l'utente
                                     // inizia a digitare.
-//                                    searchState = searchState.copy(
-//                                        showSuggestions = true
-//                                    )
-
                                     placesManager.getSuggestions(text) { suggestions ->
 
-                                        searchState = searchState.copy(
-                                            suggestions = suggestions
-                                        )
+                                        viewModel.setSuggestions(suggestions)
                                     }
 
                                 } else {
 
-                                    searchState = searchState.copy(
-                                        showSuggestions = false,
-                                        suggestions = emptyList()
-                                    )
+                                    viewModel.clearSuggestions()
                                 }
-
-                                // Mostra i suggerimenti quando l'utente
-                                // inizia a digitare.
-                                // showSuggestions = text.isNotBlank()
                             },
 
                             onSearch = {
@@ -524,23 +490,22 @@ fun HomeScreen(
                                     if (city != null) {
 
                                         // Città trovata nella lista locale.
-                                        searchState = searchState.copy(
-                                            text = city.name,
-                                            location = LatLng(
-                                                city.latitude,
-                                                city.longitude
+                                        viewModel.updateSearchState(
+                                            searchState.copy(
+                                                text = city.name,
+                                                location = LatLng(
+                                                    city.latitude,
+                                                    city.longitude
                                             ),
 
                                             // Nasconde i suggerimenti.
                                             showSuggestions = false,
                                             suggestions = emptyList()
-
+                                            )
                                         )
 
                                         // La città non ha una PlaceInfo dettagliata.
-                                        homeUiState = homeUiState.copy(
-                                            selectedPlace = null
-                                        )
+                                        viewModel.clearSelectedPlace()
 
                                         // Rimuove il focus.
                                         focusManager.clearFocus()
@@ -553,14 +518,8 @@ fun HomeScreen(
                                         // utilizza il Geocoder.
                                         geocoderManager.search(query) { location ->
 
-                                            searchState = searchState.copy(
-                                                location = location
-                                            )
-
-                                            // Nasconde i suggerimenti
-                                            searchState = searchState.copy(
-                                                showSuggestions = false
-                                            )
+                                            viewModel.setSearchLocation(location)
+                                            viewModel.clearSuggestions()
 
                                             // Rimuove il focus.
                                             focusManager.clearFocus()
@@ -602,18 +561,12 @@ fun HomeScreen(
 
                                     placesManager.getSuggestions(text) { suggestions ->
 
-                                        searchState = searchState.copy(
-                                            suggestions = suggestions,
-                                            showSuggestions = true
-                                        )
+                                        viewModel.showSuggestions(suggestions)
                                     }
 
                                 } else {
 
-                                    searchState = searchState.copy(
-                                        showSuggestions = false,
-                                        suggestions = emptyList()
-                                    )
+                                    viewModel.clearSuggestions()
                                 }
                             },
 
@@ -664,18 +617,12 @@ fun HomeScreen(
 
                                     placesManager.getSuggestions(text) { suggestions ->
 
-                                        searchState = searchState.copy(
-                                            suggestions = suggestions,
-                                            showSuggestions = true
-                                        )
+                                        viewModel.showSuggestions(suggestions)
                                     }
 
                                 } else {
 
-                                    searchState = searchState.copy(
-                                        showSuggestions = false,
-                                        suggestions = emptyList()
-                                    )
+                                    viewModel.clearSuggestions()
                                 }
                             },
 
@@ -794,30 +741,14 @@ fun HomeScreen(
 
                                             null -> {
 
-                                                searchState = searchState.copy(
-                                                    text = placeInfo.name,
-                                                    location = placeInfo.location
-                                                )
+                                                viewModel.selectSearchPlace(placeInfo)
 
-                                                homeUiState = homeUiState.copy(
-                                                    selectedPlace = placeInfo
-                                                )
-
-                                                homeUiState = homeUiState.copy(
-                                                    showPlaceInfoCard = true
-                                                )
+                                                viewModel.selectPlace(placeInfo)
                                             }
                                         }
 
                                         // Nasconde suggerimenti
-                                        searchState = searchState.copy(
-                                            showSuggestions = false
-                                        )
-
-                                        searchState = searchState.copy(
-                                            suggestions = emptyList()
-                                        )
-                                        //placeSuggestions = emptyList()
+                                        viewModel.clearSuggestions()
 
                                         // Rimuove focus
                                         focusManager.clearFocus()
@@ -918,9 +849,7 @@ fun HomeScreen(
                         onClose = {
 
                             //selectedPlace = null
-                            homeUiState = homeUiState.copy(
-                                showPlaceInfoCard = false
-                            )
+                            viewModel.closePlaceInfoCard()
                         }
                     )
                 }
@@ -975,9 +904,7 @@ fun HomeScreen(
                                 if (location != null) {
 
                                     // Salva la posizione attuale.
-                                    homeUiState = homeUiState.copy(
-                                        currentLocation = location
-                                    )
+                                    viewModel.setCurrentLocation(location)
 
                                     // Sposta la telecamera sulla posizione dell'utente.
                                     cameraPositionState.move(
@@ -998,10 +925,7 @@ fun HomeScreen(
                 // marker corrisponde a un luogo selezionato da Places
                 onMarkerClick = { place ->
 
-                    homeUiState = homeUiState.copy(
-                        selectedPlace = place,
-                        showPlaceInfoCard = true
-                    )
+                    viewModel.selectPlace(place)
 
                     snackbarScope.launch {
                         snackbarHostState.showSnackbar(

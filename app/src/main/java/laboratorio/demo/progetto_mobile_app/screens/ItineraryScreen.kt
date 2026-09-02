@@ -1,4 +1,9 @@
-package laboratorio.demo.progetto_mobile_app.main_activity
+package laboratorio.demo.progetto_mobile_app.screens
 
-class ItineraryScreen {
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+
+@Composable
+fun ItineraryScreen() {
+    Text("Schermata Itinerary")
 }
