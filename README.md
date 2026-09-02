@@ -1,1 +1,1 @@
-La cartella Mockup è fuori dal progetto, ma servre come Relazione al progetto
+La cartella Mockup è fuori dal progetto, ma serve come Relazione al progetto
