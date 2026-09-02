@@ -529,6 +529,24 @@ fun HomeScreen(
                                         }
                                     }
                                 }
+                            },
+
+                            // Cancella la ricerca
+                            onClear = {
+                                // Svuota la TextBox
+                                viewModel.updateSearchText("")
+
+                                // Cancella i suggerimenti
+                                viewModel.clearSuggestions()
+
+                                // Cancella il luogo selezionato
+                                viewModel.clearSelectedPlace()
+
+                                // Rimuove il focus
+                                focusManager.clearFocus()
+
+                                // Nasconde la tastiera
+                                keyboardController?.hide()
                             }
 
                         )
@@ -586,6 +604,18 @@ fun HomeScreen(
                                         }
                                     }
                                 }
+                            },
+
+                            // Cancella la Partenza
+                            onClear = {
+                                routeState = routeState.copy(
+                                    originText = "",
+                                    origin = null
+                                )
+
+                                viewModel.clearSuggestions()
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
                             }
                         )
 
@@ -642,6 +672,18 @@ fun HomeScreen(
                                         }
                                     }
                                 }
+                            },
+
+                            // Cancella Destinazione
+                            onClear = {
+                                routeState = routeState.copy(
+                                    destinationText = "",
+                                    destination = null
+                                )
+
+                                viewModel.clearSuggestions()
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
                             }
                         )
 

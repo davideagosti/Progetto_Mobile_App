@@ -4,6 +4,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,7 +18,8 @@ fun SearchBar(
     searchText: String,
     placeholderText: String = "Cerca un luogo",
     onSearchTextChange: (String) -> Unit,
-    onSearch: () -> Unit
+    onSearch: () -> Unit,
+    onClear: () -> Unit
 ) {
     // Barra ricerca
     OutlinedTextField(
@@ -38,19 +40,31 @@ fun SearchBar(
                     alpha = 0.5f
                 )
             )
-//            Text(
-//                "Cerca luogo o destinazione..."
-//            )
         },
 
-        // Icona
+        // Icona di ricerca a sinistra
         leadingIcon = {
 
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Cerca"
             )
+        },
 
+        // X per cancellare il testo
+        trailingIcon = {
+            if (searchText.isNotEmpty()) {
+                IconButton(
+                    onClick = {
+                        onClear()
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cancella ricerca"
+                    )
+                }
+            }
         },
 
         shape = RoundedCornerShape(50.dp),
