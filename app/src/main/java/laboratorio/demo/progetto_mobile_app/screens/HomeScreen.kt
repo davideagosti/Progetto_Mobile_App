@@ -34,7 +34,6 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.android.libraries.places.api.model.AutocompletePrediction
 
 import laboratorio.demo.progetto_mobile_app.components.AccountMenu
 import laboratorio.demo.progetto_mobile_app.components.PlaceSuggestions
@@ -50,6 +49,11 @@ import laboratorio.demo.progetto_mobile_app.utils.GeocoderManager
 import laboratorio.demo.progetto_mobile_app.utils.LocationManager
 import laboratorio.demo.progetto_mobile_app.utils.PlacesManager
 import laboratorio.demo.progetto_mobile_app.utils.PlaceInfo
+
+import laboratorio.demo.progetto_mobile_app.model.RouteState
+import laboratorio.demo.progetto_mobile_app.model.RouteSearchMode
+import laboratorio.demo.progetto_mobile_app.model.SearchState
+import laboratorio.demo.progetto_mobile_app.model.HomeUiState
 
 import laboratorio.demo.progetto_mobile_app.ui.theme.*
 
@@ -87,17 +91,21 @@ fun HomeScreen(
 
     // Indica se l'utente ha concesso almeno
     // uno dei permessi di localizzazione.
-    var locationPermissionGranted by remember {
+    var homeUiState by remember {
         mutableStateOf(
-            locationManager.hasLocationPermission()
+            HomeUiState(
+                locationPermissionGranted = locationManager.hasLocationPermission()
+            )
         )
     }
 
     // Gestisce la richiesta dei permessi Android.
     LocationPermissionHandler(
-        locationPermissionGranted = locationPermissionGranted,
+        locationPermissionGranted = homeUiState.locationPermissionGranted,
         onPermissionResult = { granted ->
-            locationPermissionGranted = granted
+            homeUiState = homeUiState.copy(
+                locationPermissionGranted = granted
+            )
         }
     )
 
@@ -124,18 +132,8 @@ fun HomeScreen(
 
     val snackbarScope = rememberCoroutineScope()
 
-    var placeSuggestions by remember {
-        mutableStateOf(emptyList<AutocompletePrediction>())
-    }
-
-    // Testo inserito nella barra di ricerca
-    var searchText by remember {
-        mutableStateOf("")
-    }
-
-    // Indica se la tendina dei suggerimenti deve essere visibile.
-    var showSuggestions by remember {
-        mutableStateOf(false)
+    var searchState by remember {
+        mutableStateOf(SearchState())
     }
 
     // Gestisce il focus della SearchBar.
@@ -145,51 +143,12 @@ fun HomeScreen(
     // la tastiera quando termina la ricerca.
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Posizione trovata dalla ricerca
-    // Null significa che non è stata ancora trovata
-    // nessuna posizione.
-    var searchedLocation by remember {
-        mutableStateOf<LatLng?>(null)
-    }
-
-    var routeOrigin by remember {
-        mutableStateOf<LatLng?>(null)
-    }
-
-    var routeDestination by remember {
-        mutableStateOf<LatLng?>(null)
-    }
-
-    var routeOriginText by remember {
-        mutableStateOf("La mia posizione")
-    }
-
-    var routeDestinationText by remember {
-        mutableStateOf("")
-    }
-
-    var routeSearchMode by remember {
-        mutableStateOf<String?>(null)
-    }
-
-    var searchingOrigin by remember {
-        mutableStateOf(false)
-    }
-
-    var isRouteMode by remember {
-        mutableStateOf(false)
-    }
-
-    var isRouteConfirmed by remember {
-        mutableStateOf(false)
-    }
-
-    var selectedPlace by remember {
-        mutableStateOf<PlaceInfo?>(null)
-    }
-
-    var showPlaceInfoCard by remember {
-        mutableStateOf(false)
+    var routeState by remember {
+        mutableStateOf(
+            RouteState(
+                originText = "La mia posizione"
+            )
+        )
     }
 
     // ==========================================
@@ -207,13 +166,15 @@ fun HomeScreen(
 
     // Quando l'utente concede il permesso,
     // l'app prova a recuperare l'ultima posizione conosciuta.
-    LaunchedEffect(locationPermissionGranted) {
+    LaunchedEffect(homeUiState.locationPermissionGranted) {
 
-        if (locationPermissionGranted) {
+        if (homeUiState.locationPermissionGranted) {
 
             locationManager.getLastLocation { location ->
 
-                currentLocation = location
+                homeUiState = homeUiState.copy(
+                    currentLocation = location
+                )
             }
         }
     }
@@ -224,7 +185,7 @@ fun HomeScreen(
 
     fun useCurrentLocationAsOrigin() {
 
-        if (!locationPermissionGranted) {
+        if (!homeUiState.locationPermissionGranted) {
 
             snackbarScope.launch {
                 snackbarHostState.showSnackbar(
@@ -239,22 +200,18 @@ fun HomeScreen(
 
             if (location != null) {
 
-                currentLocation = location
-
-                routeOrigin = LatLng(
-                    location.latitude,
-                    location.longitude
+                homeUiState = homeUiState.copy(
+                    currentLocation = location
                 )
 
-                //routeOriginText = "La mia posizione"
+                routeState = routeState.copy(
+                    origin = LatLng(
+                        location.latitude,
+                        location.longitude
+                    )//,
 
-                /*
-                snackbarScope.launch {
-                    snackbarHostState.showSnackbar(
-                        "📍 Posizione attuale impostata come partenza"
-                    )
-                }*/
-
+                    //originText = "La mia posizione"
+                )
             } else {
 
                 snackbarScope.launch {
@@ -272,10 +229,6 @@ fun HomeScreen(
 
     val routeManager = remember {
         RouteManager(context)
-    }
-
-    var routePoints by remember {
-        mutableStateOf<List<LatLng>>(emptyList())
     }
 
     val useTestLocation = false
@@ -336,9 +289,9 @@ fun HomeScreen(
 
     // Quando viene selezionata una città,
     // spostiamo la telecamera sulla sua posizione.
-    LaunchedEffect(searchedLocation) {
+    LaunchedEffect(searchState.location) {
 
-        val location = searchedLocation ?: return@LaunchedEffect
+        val location = searchState.location ?: return@LaunchedEffect
 
         cameraPositionState.animate(
             update = CameraUpdateFactory.newLatLngZoom(
@@ -372,23 +325,29 @@ fun HomeScreen(
             )
 
             // Imposta la posizione sulla mappa
-            searchedLocation = location
-
-            // Crea le informazioni del luogo preferito
-            selectedPlace = PlaceInfo(
-                placeId = favoritePlaceId,
-
-                name = favoritePlaceName
-                    ?: "Luogo preferito",
-
-                address = favoritePlaceAddress
-                    ?: "Indirizzo non disponibile",
-
+            searchState = searchState.copy(
                 location = location
             )
 
+            // Crea le informazioni del luogo preferito
+            homeUiState = homeUiState.copy(
+                selectedPlace = PlaceInfo(
+                    placeId = favoritePlaceId,
+
+                    name = favoritePlaceName
+                        ?: "Luogo preferito",
+
+                    address = favoritePlaceAddress
+                        ?: "Indirizzo non disponibile",
+
+                    location = location
+                )
+            )
+
             // Search Bar
-            searchText = favoritePlaceName ?: ""
+            searchState = searchState.copy(
+            text = favoritePlaceName ?: ""
+            )
 
             // Mostra il nome nella SearchBar
 
@@ -406,19 +365,19 @@ fun HomeScreen(
     // ==========================================
 
     LaunchedEffect(
-        routeOrigin,
-        routeDestination,
-        isRouteConfirmed
+        routeState.origin,
+        routeState.destination,
+        routeState.isConfirmed
     ) {
 
-        if (!isRouteConfirmed) {
+        if (!routeState.isConfirmed) {
             return@LaunchedEffect
         }
 
-        val origin = routeOrigin
+        val origin = routeState.origin
             ?: return@LaunchedEffect
 
-        val destination = routeDestination
+        val destination = routeState.destination
             ?: return@LaunchedEffect
 
         println("🗺 Calcolo percorso")
@@ -448,7 +407,9 @@ fun HomeScreen(
 
         if (result != null) {
 
-            routePoints = result.points
+            routeState = routeState.copy(
+                points = result.points
+            )
 
             println("✅ Percorso trovato")
 
@@ -464,7 +425,9 @@ fun HomeScreen(
 
         } else {
 
-            routePoints = emptyList()
+            routeState = routeState.copy(
+                points = emptyList()
+            )
 
             snackbarScope.launch {
                 snackbarHostState.showSnackbar(
@@ -474,104 +437,6 @@ fun HomeScreen(
         }
     }
 
-/*
-    LaunchedEffect(
-        currentLocation,
-        selectedPlace,
-        useTestLocation
-    ) {
-
-        // Destinazione
-        val destination = selectedPlace?.location
-            ?: return@LaunchedEffect
-
-        // Posizione di partenza
-        val origin : LatLng
-
-        if (useTestLocation) {
-
-            // ======================================
-            // MODALITÀ TEST
-            // ======================================
-
-            origin = defaultLocation
-
-            println(
-                "📍 Modalità TEST"
-            )
-
-            println(
-                "Partenza: Via dell'Arrigoni 260"
-            )
-
-        } else {
-
-            // ======================================
-            // MODALITÀ GPS REALE
-            // ======================================
-
-            val location = currentLocation
-                ?: return@LaunchedEffect
-
-            origin = LatLng(
-                location.latitude,
-                location.longitude
-            )
-
-            println(
-                "📍 Modalità GPS REALE"
-            )
-
-            println(
-                "Posizione: " +
-                        "${location.latitude}, " +
-                        "${location.longitude}"
-            )
-        }
-
-
-        // ------------------------------------------
-        // CALCOLO ROUTE
-        // ------------------------------------------
-
-        val result = routeManager.calculateRoute(
-            origin = origin,
-            destination = destination
-        )
-
-
-        // ------------------------------------------
-        // RISULTATO
-        // ------------------------------------------
-
-        if (result != null) {
-
-            routePoints = result.points
-
-            println(
-                "✅ Percorso trovato"
-            )
-
-            println(
-                "📏 Distanza: " +
-                        "${result.distanceMeters} metri"
-            )
-
-            println(
-                "⏱ Durata: " +
-                        "${result.durationSeconds} secondi"
-            )
-
-        } else {
-
-            routePoints = emptyList()
-
-            println(
-                "❌ Impossibile calcolare il percorso"
-            )
-        }
-    }*/
-
     // ==========================================
     // BOX PRINCIPALE (INTERFACCIA)
     // ==========================================
@@ -579,7 +444,6 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-        //.wrapContentSize()
     ) {
 
         Column(
@@ -602,30 +466,39 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f)
                 ) {
 
-                    if (!isRouteMode) {
+                    if (!routeState.isModeActive) {
                         // Barra ricerca
                         SearchBar(
                             modifier = Modifier.fillMaxWidth(),
-                            searchText = searchText,
+                            searchText = searchState.text,
                             onSearchTextChange = { text ->
 
-                                searchText = text
+                                searchState = searchState.copy(
+                                    text = text,
+                                    showSuggestions = text.isNotBlank()
+                                )
 
                                 if (text.isNotBlank()) {
 
                                     // Mostra i suggerimenti quando l'utente
                                     // inizia a digitare.
-                                    showSuggestions = true
+//                                    searchState = searchState.copy(
+//                                        showSuggestions = true
+//                                    )
 
                                     placesManager.getSuggestions(text) { suggestions ->
 
-                                        placeSuggestions = suggestions
+                                        searchState = searchState.copy(
+                                            suggestions = suggestions
+                                        )
                                     }
 
                                 } else {
 
-                                    showSuggestions = false
-                                    placeSuggestions = emptyList()
+                                    searchState = searchState.copy(
+                                        showSuggestions = false,
+                                        suggestions = emptyList()
+                                    )
                                 }
 
                                 // Mostra i suggerimenti quando l'utente
@@ -635,7 +508,7 @@ fun HomeScreen(
 
                             onSearch = {
 
-                                val query = searchText.trim()
+                                val query = searchState.text.trim()
 
                                 if (query.isNotBlank()) {
 
@@ -651,18 +524,23 @@ fun HomeScreen(
                                     if (city != null) {
 
                                         // Città trovata nella lista locale.
-                                        searchText = city.name
+                                        searchState = searchState.copy(
+                                            text = city.name,
+                                            location = LatLng(
+                                                city.latitude,
+                                                city.longitude
+                                            ),
 
-                                        searchedLocation = LatLng(
-                                            city.latitude,
-                                            city.longitude
+                                            // Nasconde i suggerimenti.
+                                            showSuggestions = false,
+                                            suggestions = emptyList()
+
                                         )
 
                                         // La città non ha una PlaceInfo dettagliata.
-                                        selectedPlace = null
-
-                                        // Nasconde i suggerimenti.
-                                        showSuggestions = false
+                                        homeUiState = homeUiState.copy(
+                                            selectedPlace = null
+                                        )
 
                                         // Rimuove il focus.
                                         focusManager.clearFocus()
@@ -675,10 +553,14 @@ fun HomeScreen(
                                         // utilizza il Geocoder.
                                         geocoderManager.search(query) { location ->
 
-                                            searchedLocation = location
+                                            searchState = searchState.copy(
+                                                location = location
+                                            )
 
                                             // Nasconde i suggerimenti
-                                            showSuggestions = false
+                                            searchState = searchState.copy(
+                                                showSuggestions = false
+                                            )
 
                                             // Rimuove il focus.
                                             focusManager.clearFocus()
@@ -693,7 +575,7 @@ fun HomeScreen(
                         )
                     }
 
-                    if (isRouteMode) {
+                    if (routeState.isModeActive) {
 
                         // ==========================================
                         // PARTENZA
@@ -704,47 +586,50 @@ fun HomeScreen(
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
 
-                            searchText = routeOriginText,
+                            searchText = routeState.originText,
 
                             placeholderText = "La mia posizione",
 
                             onSearchTextChange = { text ->
 
-                                routeOriginText = text
-
                                 // Indica che stiamo cercando la partenza
-                                routeSearchMode = "origin"
+                                routeState = routeState.copy(
+                                    originText = text,
+                                    searchMode = RouteSearchMode.ORIGIN
+                                )
 
-                                if (text.isNotBlank() //&&
-                                    //text != "La mia posizione"
-                                ) {
+                                if (text.isNotBlank()) {
 
                                     placesManager.getSuggestions(text) { suggestions ->
 
-                                        placeSuggestions = suggestions
-                                        showSuggestions = true
+                                        searchState = searchState.copy(
+                                            suggestions = suggestions,
+                                            showSuggestions = true
+                                        )
                                     }
 
                                 } else {
 
-                                    showSuggestions = false
-                                    placeSuggestions = emptyList()
+                                    searchState = searchState.copy(
+                                        showSuggestions = false,
+                                        suggestions = emptyList()
+                                    )
                                 }
                             },
 
                             onSearch = {
 
-                                val query = routeOriginText.trim()
+                                val query = routeState.originText.trim()
 
-                                if (query.isNotBlank() //&&
-                                    //query != "La mia posizione"
-                                ) {
+                                if (query.isNotBlank()) {
 
                                     geocoderManager.search(query) { location ->
 
                                         if (location != null) {
 
-                                            routeOrigin = location
+                                            routeState = routeState.copy(
+                                                origin = location
+                                            )
                                         }
                                     }
                                 }
@@ -763,35 +648,40 @@ fun HomeScreen(
                             modifier = Modifier
                                 .fillMaxWidth(),
 
-                            searchText = routeDestinationText,
+                            searchText = routeState.destinationText,
 
                             placeholderText = "Inserisci destinazione",
 
                             onSearchTextChange = { text ->
 
-                                routeDestinationText = text
-
                                 // Indica che stiamo cercando la destinazione
-                                routeSearchMode = "destination"
+                                routeState = routeState.copy(
+                                    destinationText = text,
+                                    searchMode = RouteSearchMode.DESTINATION
+                                )
 
                                 if (text.isNotBlank()) {
 
                                     placesManager.getSuggestions(text) { suggestions ->
 
-                                        placeSuggestions = suggestions
-                                        showSuggestions = true
+                                        searchState = searchState.copy(
+                                            suggestions = suggestions,
+                                            showSuggestions = true
+                                        )
                                     }
 
                                 } else {
 
-                                    showSuggestions = false
-                                    placeSuggestions = emptyList()
+                                    searchState = searchState.copy(
+                                        showSuggestions = false,
+                                        suggestions = emptyList()
+                                    )
                                 }
                             },
 
                             onSearch = {
 
-                                val query = routeDestinationText.trim()
+                                val query = routeState.destinationText.trim()
 
                                 if (query.isNotBlank()) {
 
@@ -799,7 +689,9 @@ fun HomeScreen(
 
                                         if (location != null) {
 
-                                            routeDestination = location
+                                            routeState = routeState.copy(
+                                                destination = location
+                                            )
                                         }
                                     }
                                 }
@@ -818,13 +710,15 @@ fun HomeScreen(
                             onClick = {
 
                                 if (
-                                    routeOrigin != null &&
-                                    routeDestination != null
+                                    routeState.origin != null &&
+                                    routeState.destination != null
                                 ) {
 
                                     // Permette al LaunchedEffect
                                     // di calcolare il percorso
-                                    isRouteConfirmed = true
+                                    routeState = routeState.copy(
+                                        isConfirmed = true
+                                    )
 
                                     snackbarScope.launch {
                                         snackbarHostState.showSnackbar(
@@ -857,10 +751,11 @@ fun HomeScreen(
                     // SUGGERIMENTI
                     // =====================================
 
-                    if (showSuggestions && placeSuggestions.isNotEmpty()) {
+                    if (searchState.showSuggestions &&
+                        searchState.suggestions.isNotEmpty()) {
 
                         PlaceSuggestions(
-                            suggestions = placeSuggestions,
+                            suggestions = searchState.suggestions,
 
                             onPlaceSelected = { prediction ->
 
@@ -872,40 +767,57 @@ fun HomeScreen(
                                         // RICERCA PARTENZA
                                         // =====================================
 
-                                        if (routeSearchMode == "origin") {
+                                        when (routeState.searchMode) {
 
-                                            routeOriginText = placeInfo.name
-                                            routeOrigin = placeInfo.location
+                                            RouteSearchMode.ORIGIN -> {
 
-                                        }
+                                                routeState = routeState.copy(
+                                                    originText = placeInfo.name,
+                                                    origin = placeInfo.location
+                                                )
+                                            }
 
-                                        // =====================================
-                                        // RICERCA DESTINAZIONE
-                                        // =====================================
+                                            // =====================================
+                                            // RICERCA DESTINAZIONE
+                                            // =====================================
 
-                                        else if (routeSearchMode == "destination") {
+                                            RouteSearchMode.DESTINATION -> {
+                                                routeState = routeState.copy(
+                                                    destinationText = placeInfo.name,
+                                                    destination = placeInfo.location
+                                                )
+                                            }
 
-                                            routeDestinationText = placeInfo.name
-                                            routeDestination = placeInfo.location
+                                            // =====================================
+                                            // RICERCA NORMALE
+                                            // =====================================
 
-                                        }
+                                            null -> {
 
-                                        // =====================================
-                                        // RICERCA NORMALE
-                                        // =====================================
+                                                searchState = searchState.copy(
+                                                    text = placeInfo.name,
+                                                    location = placeInfo.location
+                                                )
 
-                                        else {
+                                                homeUiState = homeUiState.copy(
+                                                    selectedPlace = placeInfo
+                                                )
 
-                                            searchText = placeInfo.name
-                                            selectedPlace = placeInfo
-                                            searchedLocation = placeInfo.location
-
-                                            showPlaceInfoCard = true
+                                                homeUiState = homeUiState.copy(
+                                                    showPlaceInfoCard = true
+                                                )
+                                            }
                                         }
 
                                         // Nasconde suggerimenti
-                                        showSuggestions = false
-                                        placeSuggestions = emptyList()
+                                        searchState = searchState.copy(
+                                            showSuggestions = false
+                                        )
+
+                                        searchState = searchState.copy(
+                                            suggestions = emptyList()
+                                        )
+                                        //placeSuggestions = emptyList()
 
                                         // Rimuove focus
                                         focusManager.clearFocus()
@@ -914,41 +826,6 @@ fun HomeScreen(
                                         keyboardController?.hide()
                                     }
                                 }
-
-                                /*
-                                // Mostra nella SearchBar il luogo selezionato.
-                                searchText = prediction.getPrimaryText(null).toString()
-
-                                // Recupera le coordinate del luogo da Google Places.
-                                placesManager.getPlaceLocation(prediction) { placeInfo ->
-
-                                    if (placeInfo != null) {
-
-                                        // Nome del luogo nella SearchBar.
-                                        searchText = placeInfo.name
-
-                                        // Salva tutte le informazioni del luogo.
-                                        selectedPlace = placeInfo
-
-                                        // Aggiorna la posizione utilizzata dalla mappa.
-                                        searchedLocation = placeInfo.location
-
-                                        // Mostra InfoCard
-                                        showPlaceInfoCard = true
-
-                                        // Nasconde i suggerimenti.
-                                        showSuggestions = false
-
-                                        // Svuota la lista dei suggerimenti.
-                                        placeSuggestions = emptyList()
-
-                                        // Rimuove il focus dalla SearchBar.
-                                        focusManager.clearFocus()
-
-                                        // Nasconde la tastiera.
-                                        keyboardController?.hide()
-                                    }
-                                }*/
                             }
                         )
                     }
@@ -963,65 +840,50 @@ fun HomeScreen(
                 AccountMenu(navController)
             }
 
+            // Pulsante di creazione percorso
             Button(
                 onClick = {
-                    isRouteMode = !isRouteMode
-                    if (isRouteMode) {
+
+                    val newMode = !routeState.isModeActive
+
+                    if (newMode) {
 
                         // ==========================================
                         // APERTURA MODALITÀ PERCORSO
                         // ==========================================
 
-                        routeSearchMode = "origin"
+                        routeState = routeState.copy(
+                            isModeActive = true,
+                            searchMode = RouteSearchMode.ORIGIN,
+                            originText = "",
+                            destinationText = "",
+                            destination = null,
+                            isConfirmed = false,
+                            points = emptyList()
+                        )
 
-                        routeOriginText = ""
-                        routeDestinationText = ""
-
-                        routeDestination = null
-                        routePoints = emptyList()
-
-                        // Prova a usare la posizione GPS
+                        // Prova a usare la posizione GPS come partenza default
                         useCurrentLocationAsOrigin()
 
-                        /*
-                        // Quando apro la modalità percorso,
-                        // provo a utilizzare la posizione GPS
-                        // come partenza.
-
-                        useCurrentLocationAsOrigin()
-
-                        routeOriginText = "La mia posizione"
-                        routeDestinationText = ""
-
-                        routeDestination = null
-                        routePoints = emptyList()
-                        */
                     } else {
 
                         // ==========================================
                         // CHIUSURA MODALITÀ PERCORSO
                         // ==========================================
 
-                        routeOrigin = null
-                        routeDestination = null
+                        routeState = routeState.copy(
+                            isModeActive = false,
+                            origin = null,
+                            destination = null,
+                            originText = "",
+                            destinationText = "",
+                            searchMode = null,
+                            isConfirmed = false,
+                            points = emptyList()
+                        )
 
-                        routeOriginText = ""
-                        routeDestinationText = ""
-
-                        routePoints = emptyList()
-
-                        routeSearchMode = null
-                        isRouteConfirmed = false
-
-                        /*
                         // Quando chiudo la modalità percorso
                         // pulisco il percorso.
-
-                        routeOrigin = null
-                        routeDestination = null
-                        routePoints = emptyList()
-
-                        routeSearchMode = null*/
                     }
                 },
 
@@ -1030,20 +892,18 @@ fun HomeScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = lightBlue
                 )
-            //)
-
             ) {
                 Text(
-                    if (isRouteMode)
+                    if (routeState.isModeActive)
                         "Chiudi percorso"
                     else
                         "Crea percorso"
                 )
             }
 
-            if (showPlaceInfoCard) {
+            if (homeUiState.showPlaceInfoCard) {
                 // Info Card del luogo selezionato
-                selectedPlace?.let { place ->
+                homeUiState.selectedPlace?.let { place ->
 
                     PlaceInfoCard(
                         place = place,
@@ -1058,8 +918,9 @@ fun HomeScreen(
                         onClose = {
 
                             //selectedPlace = null
-
-                            showPlaceInfoCard = false
+                            homeUiState = homeUiState.copy(
+                                showPlaceInfoCard = false
+                            )
                         }
                     )
                 }
@@ -1076,17 +937,17 @@ fun HomeScreen(
 
                 cameraPositionState = cameraPositionState,
 
-                searchedLocation = searchedLocation,
+                searchedLocation = searchState.location,
 
-                selectedPlace = selectedPlace,
+                selectedPlace = homeUiState.selectedPlace,
 
-                searchText = searchText,
+                searchText = searchState.text,
 
-                locationPermissionGranted = locationPermissionGranted,
+                locationPermissionGranted = homeUiState.locationPermissionGranted,
 
-                currentLocation = currentLocation,
+                currentLocation = homeUiState.currentLocation,
 
-                routePoints = routePoints,
+                routePoints = routeState.points,
 
                 useTestLocation = useTestLocation,
 
@@ -1107,15 +968,16 @@ fun HomeScreen(
                 onMyLocationClick = {
 
                     // Controlla che il permesso sia disponibile.
-                    if (locationPermissionGranted) {
+                    if (homeUiState.locationPermissionGranted) {
 
-                        locationManager.getLastLocation {
-                            location ->
+                        locationManager.getLastLocation { location ->
 
                                 if (location != null) {
 
                                     // Salva la posizione attuale.
-                                    currentLocation = location
+                                    homeUiState = homeUiState.copy(
+                                        currentLocation = location
+                                    )
 
                                     // Sposta la telecamera sulla posizione dell'utente.
                                     cameraPositionState.move(
@@ -1136,14 +998,15 @@ fun HomeScreen(
                 // marker corrisponde a un luogo selezionato da Places
                 onMarkerClick = { place ->
 
-                    selectedPlace = place
-                    showPlaceInfoCard = true
-
+                    homeUiState = homeUiState.copy(
+                        selectedPlace = place,
+                        showPlaceInfoCard = true
+                    )
 
                     snackbarScope.launch {
                         snackbarHostState.showSnackbar(
 
-                            "Marker cliccato: ${selectedPlace!!.name}"
+                            "Marker cliccato: ${place.name}"
                         )
                     }
                 }
