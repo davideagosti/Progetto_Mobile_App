@@ -2,13 +2,26 @@ package laboratorio.demo.progetto_mobile_app.screens
 
 import kotlinx.coroutines.launch
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
+import android.provider.Settings
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOff
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.Composable
@@ -33,6 +46,11 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.LocationSettingsRequest
 
 import laboratorio.demo.progetto_mobile_app.components.AccountMenu
 import laboratorio.demo.progetto_mobile_app.components.PlaceSuggestions
@@ -41,9 +59,9 @@ import laboratorio.demo.progetto_mobile_app.components.MapSection
 import laboratorio.demo.progetto_mobile_app.components.SearchBar
 import laboratorio.demo.progetto_mobile_app.components.PlaceInfoCard
 import laboratorio.demo.progetto_mobile_app.components.cities
+
 import laboratorio.demo.progetto_mobile_app.utils.FavoritesManager
 import laboratorio.demo.progetto_mobile_app.utils.RouteManager
-
 import laboratorio.demo.progetto_mobile_app.utils.GeocoderManager
 import laboratorio.demo.progetto_mobile_app.utils.LocationManager
 import laboratorio.demo.progetto_mobile_app.utils.PlacesManager
@@ -95,19 +113,28 @@ fun HomeScreen(
 
     // Indica se l'utente ha concesso almeno
     // uno dei permessi di localizzazione.
-    LaunchedEffect(Unit) {
-        viewModel.setLocationPermissionGranted(
-            locationManager.hasLocationPermission()
-        )
-    }
+//    LaunchedEffect(Unit) {
+//        viewModel.setLocationPermissionGranted(
+//            locationManager.hasLocationPermission()
+//        )
+//    }
 
     // Gestisce la richiesta dei permessi Android.
     LocationPermissionHandler(
-        locationPermissionGranted = homeUiState.locationPermissionGranted,
         onPermissionResult = { granted ->
             viewModel.setLocationPermissionGranted(granted)
+        },
+        onLocationEnabledResult = { enabled ->
+            viewModel.setLocationEnabled(enabled)
         }
     )
+
+//    if (!homeUiState.locationPermissionGranted) {
+//        Text(
+//            text = "Posizione disattivata",
+//            color = Color.Red
+//        )
+//    }
 
     // ==========================================
     // GESTIONE RICERCA
@@ -170,7 +197,9 @@ fun HomeScreen(
 
     fun useCurrentLocationAsOrigin() {
 
-        if (!homeUiState.locationPermissionGranted) {
+        if (!homeUiState.locationPermissionGranted ||
+            !homeUiState.locationEnabled
+        ) {
 
             snackbarScope.launch {
                 snackbarHostState.showSnackbar(
@@ -419,6 +448,58 @@ fun HomeScreen(
         }
     }
 
+    // Premesso di posizione
+    fun Context.findActivity(): Activity? {
+        var context = this
+
+        while (context is ContextWrapper) {
+            if (context is Activity) {
+                return context
+            }
+
+            context = context.baseContext
+        }
+
+        return null
+    }
+
+    fun requestEnableLocation() {
+
+        val activity = context.findActivity()
+            ?: return
+
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            10000L
+        ).build()
+
+        val locationSettingsRequest =
+            LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest)
+                .setAlwaysShow(true)
+                .build()
+
+        val settingsClient =
+            LocationServices.getSettingsClient(activity)
+
+        settingsClient.checkLocationSettings(
+            locationSettingsRequest
+        ).addOnFailureListener { exception ->
+
+            if (exception is ResolvableApiException) {
+
+                try {
+                    exception.startResolutionForResult(
+                        activity,
+                        1001
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
     // ==========================================
     // BOX PRINCIPALE (INTERFACCIA)
     // ==========================================
@@ -551,6 +632,69 @@ fun HomeScreen(
 
                         )
                     }
+
+                    // Avviso posizione disattivata
+                    if (!homeUiState.locationPermissionGranted ||
+                        !homeUiState.locationEnabled
+                    ) {
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    top = 6.dp,
+                                    start = 8.dp,
+                                    end = 8.dp
+                                )
+                                .background(
+                                    color = MaterialTheme.colorScheme.errorContainer,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(
+                                    horizontal = 10.dp,
+                                    vertical = 6.dp
+                                ),
+
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Icon(
+                                imageVector = Icons.Default.LocationOff,
+                                contentDescription = "Posizione disattivata",
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+
+                            Spacer(
+                                modifier = Modifier.width(8.dp)
+                            )
+
+                            Text(
+                                text = if (!homeUiState.locationPermissionGranted) {
+                                    "Permesso posizione non concesso"
+                                } else {
+                                    "Posizione del dispositivo disattivata, " +
+                                            "abilita su impostazioni o da qui"
+                                },
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (
+                                homeUiState.locationPermissionGranted &&
+                                !homeUiState.locationEnabled
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        requestEnableLocation()
+                                    }
+                                ) {
+                                    Text("Attiva")
+                                }
+                            }
+                        }
+                    }
+
 
                     if (routeState.isModeActive) {
 

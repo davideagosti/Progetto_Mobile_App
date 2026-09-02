@@ -37,6 +37,12 @@ class HomeViewModel : ViewModel() {
         )
     }
 
+    fun setLocationEnabled(enabled: Boolean) {
+        homeUiState = homeUiState.copy(
+            locationEnabled = enabled
+        )
+    }
+
     fun setCurrentLocation(location: Location?) {
         homeUiState = homeUiState.copy(
             currentLocation = location
