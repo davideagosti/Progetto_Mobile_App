@@ -43,6 +43,10 @@ import laboratorio.demo.progetto_mobile_app.components.FavoritePlaceCard
 import laboratorio.demo.progetto_mobile_app.utils.FavoritePlace
 import laboratorio.demo.progetto_mobile_app.utils.FavoritesManager
 
+/**
+ * Schermata che visualizza i luoghi salvati dall'utente
+ * nella lista dei preferiti.
+ */
 @Composable
 fun FavoritesScreen(
     navController: NavController

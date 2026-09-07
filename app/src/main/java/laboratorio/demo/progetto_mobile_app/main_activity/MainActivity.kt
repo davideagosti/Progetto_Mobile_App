@@ -20,6 +20,13 @@ import laboratorio.demo.progetto_mobile_app.navigation.AppNavigation
 import laboratorio.demo.progetto_mobile_app.screens.splash.SplashScreen
 import laboratorio.demo.progetto_mobile_app.ui.theme.Progetto_Mobile_AppTheme
 
+/**
+ * Activity principale dell'applicazione.
+ *
+ * Inizializza l'interfaccia Compose e avvia il sistema
+ * di navigazione principale dell'app.
+ */
+
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

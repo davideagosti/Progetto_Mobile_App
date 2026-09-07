@@ -11,6 +11,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 
+/**
+ * Pulsante riutilizzabile per tornare alla schermata precedente.
+ */
 @Composable
 fun BackButton(
 //    navController: NavController,

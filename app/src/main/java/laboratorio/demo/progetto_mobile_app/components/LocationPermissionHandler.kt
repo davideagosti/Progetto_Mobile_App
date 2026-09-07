@@ -23,8 +23,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.delay
 
 /**
- *  Gestione del permesso della posizione
- * */
+ * Gestisce la richiesta del permesso di localizzazione.
+ *
+ * Verifica lo stato del permesso e richiede l'autorizzazione
+ * all'utente quando necessario.
+ */
 @Composable
 fun LocationPermissionHandler(
     onPermissionResult: (Boolean) -> Unit,

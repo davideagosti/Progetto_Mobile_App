@@ -7,6 +7,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import laboratorio.demo.progetto_mobile_app.navigation.Routes
 
+/**
+ * Top bar riutilizzabile dell'applicazione.
+ *
+ * Visualizza il titolo della schermata e le eventuali azioni
+ * disponibili nella parte superiore dell'interfaccia.
+ */
+
 // AppTopBar si occupa solo del contenuto della TopBar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -25,6 +25,12 @@ import laboratorio.demo.progetto_mobile_app.screens.FavoritesScreen
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
 
+/**
+ * Gestisce la navigazione tra le schermate dell'applicazione.
+ *
+ * Definisce il NavHost e associa ogni route alla relativa schermata.
+ */
+
 @Composable
 fun AppNavigation(
     navController: NavHostController

@@ -5,6 +5,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import laboratorio.demo.progetto_mobile_app.R
 
+/**
+ * Contiene la configurazione della Top App Bar,
+ * come titolo, colore e azioni disponibili.
+ */
+
+// Configurazione della App Bar utilizzata nelle schermate principali.
 data class AppBarConfig(
 
     val backgroundColor: Color,

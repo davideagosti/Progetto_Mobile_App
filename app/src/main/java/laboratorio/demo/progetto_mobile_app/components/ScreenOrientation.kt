@@ -4,6 +4,9 @@ import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 
+/**
+ * Restituisce true quando il dispositivo è orientato in modalità landscape.
+ */
 @Composable
 fun isLandscape(): Boolean {
 

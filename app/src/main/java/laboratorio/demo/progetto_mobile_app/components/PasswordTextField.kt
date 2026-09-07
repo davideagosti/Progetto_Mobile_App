@@ -16,6 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 
+/**
+ * Campo di testo riutilizzabile per l'inserimento della password.
+ *
+ * Permette di mostrare o nascondere il contenuto della password.
+ */
 @Composable
 fun PasswordTextField(
     value: String,

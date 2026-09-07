@@ -13,12 +13,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+/**
+ * Visualizza una lista di città suggerite durante la ricerca.
+ */
 data class City(
     val name: String,
     val latitude: Double,
     val longitude: Double
 )
 
+/**
+ * Rappresenta una città visualizzata tra i suggerimenti.
+ */
 val cities = listOf(
     City("Bologna", 44.4949, 11.3426),
     City("Roma", 41.9028, 12.4964),

@@ -11,6 +11,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
+/**
+ * Schermata di registrazione di un nuovo account.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(navController: NavController) {

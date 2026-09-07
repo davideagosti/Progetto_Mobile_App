@@ -11,7 +11,12 @@ import androidx.compose.ui.graphics.Color
 
 import androidx.compose.runtime.Composable
 
-
+/**
+ * Scaffold principale riutilizzabile per le schermate dell'app.
+ *
+ * Gestisce la struttura comune dell'interfaccia, come Top Bar,
+ * Bottom Bar e contenuto principale.
+ */
 // AppScaffold decide il colore della TopBar, il colore
 // del contenitore, l'elevazione, ecc.
 @OptIn(ExperimentalMaterial3Api::class)

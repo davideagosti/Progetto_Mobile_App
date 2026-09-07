@@ -27,6 +27,7 @@ class GeocoderManager(
             return
         }
 
+        // Esegue il Geocoder fuori dal Main Thread per non bloccare la UI.
         // Geocoder viene eseguito su un thread separato
         // per non bloccare l'interfaccia dell'app.
         Thread {

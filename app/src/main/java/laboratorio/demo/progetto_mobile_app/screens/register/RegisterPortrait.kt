@@ -16,6 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 
+/**
+ * Layout portrait della schermata di registrazione.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterPortrait(

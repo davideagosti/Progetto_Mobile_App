@@ -26,6 +26,12 @@ import laboratorio.demo.progetto_mobile_app.components.AppScaffold
 import laboratorio.demo.progetto_mobile_app.components.AppBarConfig
 import laboratorio.demo.progetto_mobile_app.ui.theme.Progetto_Mobile_AppTheme
 
+/**
+ * Schermata iniziale visualizzata durante l'avvio dell'applicazione.
+ *
+ * Al termine dell'animazione o del caricamento iniziale,
+ * l'utente viene indirizzato alla schermata successiva.
+ */
 @Composable
 //@Preview
 fun SplashScreen(

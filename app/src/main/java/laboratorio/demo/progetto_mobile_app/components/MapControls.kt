@@ -22,6 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * Controlli sovrapposti alla mappa per le operazioni principali,
+ * come centratura della posizione e gestione della visualizzazione.
+ */
 @Composable
 fun MapControls (
     onZoomIn: () -> Unit,

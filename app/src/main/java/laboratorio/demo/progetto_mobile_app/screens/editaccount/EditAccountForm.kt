@@ -13,6 +13,9 @@ import androidx.navigation.NavController
 
 import laboratorio.demo.progetto_mobile_app.components.PasswordTextField
 
+/**
+ * Contiene il form utilizzato per modificare i dati dell'account.
+ */
 @Composable
 fun EditAccountForm(
 

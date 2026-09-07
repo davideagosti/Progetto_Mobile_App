@@ -17,6 +17,9 @@ import androidx.compose.ui.unit.dp
 
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 
+/**
+ * Visualizza i suggerimenti restituiti dalla ricerca dei luoghi.
+ */
 @Composable
 fun PlaceSuggestions(
     suggestions: List<AutocompletePrediction>,

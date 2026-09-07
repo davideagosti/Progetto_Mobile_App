@@ -15,6 +15,9 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import laboratorio.demo.progetto_mobile_app.R
 
+/**
+ * Layout landscape della schermata di modifica dell'account.
+ */
 @Composable
 fun EditAccountLandscape(
 

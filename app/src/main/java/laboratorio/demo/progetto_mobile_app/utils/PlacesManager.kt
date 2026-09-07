@@ -11,6 +11,12 @@ import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 
+/**
+ * Gestisce le operazioni di ricerca dei luoghi tramite Google Places API.
+ *
+ * Fornisce suggerimenti durante la digitazione e recupera le informazioni
+ * dettagliate del luogo selezionato.
+ */
 data class PlaceInfo(
     val placeId: String,
     val name: String,

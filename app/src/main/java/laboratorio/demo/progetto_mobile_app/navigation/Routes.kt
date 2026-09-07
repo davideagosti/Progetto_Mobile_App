@@ -1,5 +1,11 @@
 package laboratorio.demo.progetto_mobile_app.navigation
 
+/**
+ * Definisce le route utilizzate dalla navigazione dell'app.
+ *
+ * Ogni oggetto rappresenta una schermata raggiungibile
+ * tramite il NavController.
+ */
 sealed class Routes(
 
     val route: String,

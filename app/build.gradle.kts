@@ -6,6 +6,7 @@ plugins {
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 
     // Add the Google services Gradle plugin
+    // Plugin necessario per integrare Firebase/Google Services nel progetto.
     id("com.google.gms.google-services")
 }
 

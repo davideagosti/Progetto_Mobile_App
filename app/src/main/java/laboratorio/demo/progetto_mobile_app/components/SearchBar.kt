@@ -12,6 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 
+/**
+ * Barra di ricerca utilizzata per cercare luoghi.
+ *
+ * Gestisce il testo inserito dall'utente e visualizza
+ * le eventuali operazioni di ricerca disponibili.
+ */
 @Composable
 fun SearchBar(
     modifier: Modifier = Modifier,

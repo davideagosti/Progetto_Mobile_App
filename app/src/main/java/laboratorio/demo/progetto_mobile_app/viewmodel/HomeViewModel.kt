@@ -15,6 +15,12 @@ import laboratorio.demo.progetto_mobile_app.utils.PlaceInfo
 import laboratorio.demo.progetto_mobile_app.model.HomeUiState
 import laboratorio.demo.progetto_mobile_app.model.SearchState
 
+/**
+ * ViewModel principale della Home.
+ *
+ * Gestisce lo stato della schermata, la ricerca dei luoghi,
+ * la posizione dell'utente, i preferiti e il calcolo dei percorsi.
+ */
 class HomeViewModel : ViewModel() {
 
     var homeUiState by mutableStateOf(HomeUiState())

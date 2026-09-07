@@ -32,6 +32,9 @@ import androidx.compose.ui.unit.dp
 import laboratorio.demo.progetto_mobile_app.utils.FavoritePlace
 import laboratorio.demo.progetto_mobile_app.utils.FavoritesManager
 
+/**
+ * Card utilizzata per visualizzare un luogo salvato tra i preferiti.
+ */
 @Composable
 fun FavoritePlaceCard(
     place: FavoritePlace,

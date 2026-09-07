@@ -46,6 +46,9 @@ private val LightColors = lightColorScheme(
     surface = LightGray
 )
 
+/**
+ * Definisce il tema grafico principale dell'applicazione.
+ */
 @Composable
 fun Progetto_Mobile_AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

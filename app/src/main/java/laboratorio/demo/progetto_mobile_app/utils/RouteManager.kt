@@ -17,6 +17,14 @@ import retrofit2.http.Header
 import retrofit2.http.Headers
 import retrofit2.http.POST
 
+/**
+ * Gestisce il calcolo dei percorsi tramite Google Routes API.
+ *
+ * Costruisce la richiesta utilizzando punto di partenza e destinazione,
+ * invia la richiesta al servizio Google e converte la risposta
+ * in una struttura utilizzabile dalla UI.
+ */
+
 // ======================================================
 // RISULTATO DEL PERCORSO
 // ======================================================

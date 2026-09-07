@@ -21,6 +21,12 @@ import android.location.Location
 
 import laboratorio.demo.progetto_mobile_app.utils.PlaceInfo
 
+/**
+ * Sezione della Home dedicata alla visualizzazione della mappa.
+ *
+ * Mostra la posizione corrente, il luogo selezionato e,
+ * quando disponibile, il percorso calcolato.
+ */
 @Composable
 fun MapSection(
     modifier: Modifier = Modifier,

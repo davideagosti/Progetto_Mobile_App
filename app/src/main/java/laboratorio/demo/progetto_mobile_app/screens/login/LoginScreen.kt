@@ -13,7 +13,12 @@ import androidx.navigation.compose.rememberNavController
 import laboratorio.demo.progetto_mobile_app.navigation.Routes
 import laboratorio.demo.progetto_mobile_app.components.isLandscape
 
-
+/**
+ * Schermata di accesso all'applicazione.
+ *
+ * Coordina il form di login e il ViewModel responsabile
+ * della gestione dell'autenticazione.
+ */
 @Composable
 fun LoginScreen(navController: NavController) {
     var email by rememberSaveable  { mutableStateOf("") }

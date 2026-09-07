@@ -3,6 +3,10 @@ package laboratorio.demo.progetto_mobile_app.utils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
+/**
+ * Gestisce la lettura e la modifica dei luoghi preferiti
+ * dell'utente tramite Firebase Firestore.
+ */
 class FavoritesManager {
 
     private val auth = FirebaseAuth.getInstance()

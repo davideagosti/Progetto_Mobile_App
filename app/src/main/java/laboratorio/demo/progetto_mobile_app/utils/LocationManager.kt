@@ -41,6 +41,9 @@ class LocationManager(
         // non possiamo accedere alla posizione.
         // Controlla se l'utente abbia concesso
         // un permesso di localizzazione.
+
+        // Senza un permesso di localizzazione non è possibile
+        // accedere alla posizione del dispositivo.
         if (!hasLocationPermission()) {
 
             onLocationReceived(null)

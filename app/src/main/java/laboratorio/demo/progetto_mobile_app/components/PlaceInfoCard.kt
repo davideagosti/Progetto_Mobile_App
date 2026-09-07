@@ -34,6 +34,10 @@ import laboratorio.demo.progetto_mobile_app.utils.FavoritePlace
 import laboratorio.demo.progetto_mobile_app.utils.FavoritesManager
 import laboratorio.demo.progetto_mobile_app.utils.PlaceInfo
 
+/**
+ * Mostra le informazioni principali del luogo selezionato,
+ * incluse denominazione, indirizzo e azioni disponibili.
+ */
 @Composable
 fun PlaceInfoCard(
     place: PlaceInfo,
